@@ -39,7 +39,7 @@ def MainMenu():
 
 @route('/video/tsn/categories')
 def CategoryMenu(title, rootPath):
-	dir = ObjectContainer(title2 = title)
+	dir = ObjectContainer(title2 = title, no_cache = True)
 	
 	items = tsn.GetItemList(rootPath)	
 	
@@ -64,33 +64,31 @@ def CategoryMenu(title, rootPath):
 	
 @route('/video/tsn/videos')
 def VideoListMenu(title, feedUrl, tag):	
-	dir = ObjectContainer(title2 = title)
+	dir = ObjectContainer(title2 = title, no_cache = True)
 	
 	videoList = tsn.GetVideosInList(feedUrl, tag)
 	
-	Log.Debug("displaying video list")
+	#Log.Debug("displaying video list")	
+	quality = Prefs["vidquality"]
 	
-	
-	for video in videoList:
-	
-		#url = tsn.GetVideoUrl(video.ID)
-		
-		#if URLService.ServiceIdentifierForURL(url) is not None:
-		dir.add(VideoClipObject(
+	for video in videoList:			
+		clip = VideoClipObject(
 			key = Callback(PlayVideo, title = video.Title, id = video.ID),
 			rating_key = id,
-			#url = url,
 			title = video.Title,
 			summary = video.Description,
-			thumb = video.ThumbUrl
-		))
-						
+			thumb = video.ThumbUrl,
+			duration = video.DurationMilliseconds
+		)
+		
+		dir.add(clip)
 			
-	Log.Debug("done displaying video list")
+	#Log.Debug("done displaying video list")
 	# display empty message
 	if len(dir) == 0:
 		Log.Debug("no videos")
-		return ObjectContainer(header=title, message=L("ErrorNoTitles")) 
+		return ObjectContainer(header=title, message=L("ErrorNoTitles"))
+		
 	
 	return dir
 
@@ -104,4 +102,7 @@ def PlayVideo(id, title):
 	Log.Debug("attempting to play: " + url)
 	
 	return Redirect(url)
+	
+	
+	
 	
