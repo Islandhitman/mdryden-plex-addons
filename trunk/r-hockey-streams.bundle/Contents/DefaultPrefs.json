@@ -1,9 +1,9 @@
 [
 	{
-		"id": "test",
+		"id": "videoQuality",
 		"label": "Video Quality",
 		"type": "enum",
-		"values": ["1", "2", "3", "4", "5"],
-		"default": "1"
+		"values": ["400", "800", "1200", "1600", "3000", "4500"],
+		"default": "3000"
 	}
 ]
