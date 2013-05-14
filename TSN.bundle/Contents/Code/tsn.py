@@ -1,9 +1,12 @@
-import re, urlparse
+import re, urlparse, time
+from datetime import datetime
 
 ###############################################
 
 VIDEO_MENU = "http://www.tsn.ca/config/videoHubMenu.xml"
 VIDEO_URL = "http://esi.ctv.ca/datafeed/urlgenjs.aspx?vid="
+CACHE_TIME = 3600
+TSN_DATE_FORMAT = "%A, %B %d, %Y %I:%M:%S %p" #Monday, May 13, 2013 7:24:42 PM
 
 # This file contains code licensed under the GNU GPL v2 from the project
 # teefer-xmbc-repo/plugin.video.tsn, located at:
@@ -27,11 +30,12 @@ class CategoryItem:
 	IsCategory = True
 	
 class VideoItem:
-	def __init__(self, title, id, description, thumbUrl):
+	def __init__(self, title, id, description, thumbUrl, durationMilliseconds):
 		self.Title = title
 		self.ID = id
 		self.Description = description
 		self.ThumbUrl = thumbUrl
+		self.DurationMilliseconds = durationMilliseconds
 	
 ###############################################	
 
@@ -82,8 +86,10 @@ def GetItemList(rootPath):
 def GetVideosInList(feedUrl, tag):
 
 	videoList = []
+	
+	Log.Debug("opening feed: " + feedUrl)
 
-	items = XML.ElementFromURL(feedUrl)
+	items = XML.ElementFromURL(feedUrl, cacheTime = CACHE_TIME)
 	videos = items.xpath("//item")
 	
 	for video in videos:
@@ -93,23 +99,29 @@ def GetVideosInList(feedUrl, tag):
 		videoTitle = video.xpath("./title/text()")[0]
 		description = video.xpath("./description/text()")[0]
 		thumb = video.xpath("./imgUrl/text()")[0]
+		durationSeconds = video.xpath("./duration/text()")[0]
+		durationMilliseconds = int(durationSeconds) * 1000		
 		
 		#videoUrl = GetVideoUrl(id)
 		
 		#Log.Debug("videoUrl: " + videoUrl)
 				
-		videoList.append(VideoItem(title = videoTitle, id = id, description = description, thumbUrl = thumb))
+		videoList.append(VideoItem(
+			title = videoTitle,
+			id = id,
+			description = description,
+			thumbUrl = thumb,
+			durationMilliseconds = durationMilliseconds
+		))
 	
 	return videoList
 
 def GetVideoUrl(id, quality):
 	tempurl = VIDEO_URL + id
-               
-	#data = open_url(tempurl)
 	
 	#Log.Debug("opening " + tempurl)
 	
-	data = HTML.ElementFromURL(tempurl)#, headers = { "Referer"= "http://cls.ctvdigital.net/" })
+	data = HTML.ElementFromURL(tempurl)
 	
 	#Log.Debug("data: " + HTML.StringFromElement(data))
 	
@@ -118,47 +130,16 @@ def GetVideoUrl(id, quality):
 	
 	#Log.Debug("rtmpe: " + temprtmpe[0])
 
-	# there are currently 4 very different rtmpe strings from tsn.  My code isn't smart enough to everything
-	# so this is a poor workaround
 	o = urlparse.urlparse(temprtmpe[0])
 	vidquality = int(quality)
 
-	if o.netloc == 'tsn.fcod.llnwd.net':
-		firstpart = 'rtmpe://tsn.fcod.llnwd.net/a5504'
-		secondpart = re.compile('a5504/(.+?)\'').findall(data)
-		playpath = re.compile('ondemand/(.+?).mp4').findall(temprtmpe[0])
-		url = firstpart + ' playpath=mp4:' + secondpart[0]
-	elif o.netloc == 'ctvmms.rd.llnwd.net':
-		firstpart = 'http://ctvmms.vo.llnwd.net/kip0/_pxn=1+_pxI0=Ripod-h264+_pxL0=undefined+_pxM0=+_pxK=19321+_pxE=mp4/'
-		secondpart = re.compile('ctvmms.rd.llnwd.net/(.+?).mp4').findall(temprtmpe[0])
-		url = firstpart + secondpart[0] + '.mp4'				
-	elif o.netloc == 'tsnpmd.akamaihd.edgesuite.net':
-		#vidquality=__settings__.getSetting('vidquality')
-		#adding 1 to the video quality because I don't use zero as the lowest quality, I use 1 as the lowest quality.
-		#vidquality=int(vidquality)+1
-	   
-		url = temprtmpe[0]
-		#starting in version 0.1.5 (March 19 2013) tsn started using adaptive quality in their http streams
-		#the quality now goes up to 720p (adaptive_08)
-		url = url.replace('Adaptive_04','Adaptive_0' + str(vidquality+3))
-	else:
-		#break that down into 3 parts so that we can build the final url and playpath
-		firstpart = re.compile('rtmpe(.+?)ondemand/').findall(temprtmpe[0])
-		firstpart = 'rtmpe' + firstpart[0] + 'ondemand?'
-		secondpart = re.compile('\?(.+?)\'').findall(data)
-		thirdpart = re.compile('ondemand/(.+?)\?').findall(temprtmpe[0])
-		playpath = ' playpath=mp4:' + thirdpart[0]
-
-		#vidquality=__settings__.getSetting('vidquality')
-		#adding 1 to the video quality because I don't use zero as the lowest quality, I use 1 as the lowest quality.
-		#vidquality=int(vidquality)+1
-
-		#the tsn site adaptivly figures out what quality it should show you (maybe based on your bandwidth somehow?).  We can set the quality outselves in the settings of this plugin
-		playpath = playpath.replace('Adaptive_05','Adaptive_0' + str(vidquality))
-		playpath = playpath.replace('Adaptive_04','Adaptive_0' + str(vidquality))
-		playpath = playpath.replace('Adaptive_03','Adaptive_0' + str(vidquality))
-		playpath = playpath.replace('Adaptive_02','Adaptive_0' + str(vidquality))
-		playpath = playpath.replace('Adaptive_01','Adaptive_0' + str(vidquality))
-		url = firstpart + secondpart[0] + playpath
+	# raise an error if we encounter an URL we don't know how to parse
+	if o.netloc != 'tsnpmd.akamaihd.edgesuite.net':
+		raise Exception("Unknown video location")
+		
+	url = temprtmpe[0]
+	#starting in version 0.1.5 (March 19 2013) tsn started using adaptive quality in their http streams
+	#the quality now goes up to 720p (adaptive_08)
+	url = url.replace('Adaptive_04','Adaptive_0' + str(vidquality+3))
 
 	return url
