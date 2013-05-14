@@ -2,7 +2,7 @@ import rhockey
 
 ###############################################
 
-VIDEO_PREFIX = "/video/tsn"
+VIDEO_PREFIX = "/video/reddithockeystreams"
 
 NAME = "Reddit Hockey"
 
@@ -19,89 +19,119 @@ def Start():
 	Plugin.AddPrefixHandler(VIDEO_PREFIX, MainMenu, NAME, ICON, ART)
 	Plugin.AddViewGroup("LIST", viewMode = "List", mediaType = "items")
 	
-	# setup artwork
-	#MediaContainer.art = R(ART)
-	#MediaContainer.title1 = NAME
-	#MediaContainer.viewGroup = "List"
-	#DirectoryItem.thumb = R(ICON)
 	ObjectContainer.title1 = NAME
 	
-	HTTP.Headers["Referer"] = "http://cls.ctvdigital.net/"
-	Log.Debug("TSN Plugin Start")
+	Log.Debug("Plugin Start")
 	
 # This main function will setup the displayed items
-@handler('/video/tsn', 'TSN')
 def MainMenu():
 	# load the top level menu items
-		
-	return CategoryMenu(NAME, "//menu")
+	# this has a full list, and a smart list
+	# smart list attempts to filter threads which don't appear to be game threads
+	# full list returns all threads which match the search
+	
+	dir = ObjectContainer(title2 = Locale.LocalString("MainMenuTitle"))
+	
+	dir.add(DirectoryObject(
+			key = Callback(GameList, type = "smart"),
+			title = Locale.LocalString("SmartGameListTitle"),
+			summary = Locale.LocalString("SmartGameListSummary")
+		))
+	
+	dir.add(DirectoryObject(
+			key = Callback(GameList, type = "full"),
+			title = Locale.LocalString("FullGameListTitle"),
+			summary = Locale.LocalString("FullGameListSummary")
+		))
+	
+	return dir
 		
 
-@route('/video/tsn/categories')
-def CategoryMenu(title, rootPath):
+@route('/video/reddithockeystreams/games')
+def GameList(type):
+
+	title = ""
+	if type == "smart":
+		title = Locale.LocalString("SmartGameListTitle")
+	else:
+		title = Locale.LocalString("FullGameListTitle")
+
 	dir = ObjectContainer(title2 = title)
 	
-	items = tsn.GetItemList(rootPath)	
+	Log.Debug("GameList()")
+	
+	items = rhockey.GetGameList(type)	
 	
 	for item in items:
-		if item.IsCategory:
-			#Log.Debug("Category: " + item.Title + ", Path: " + item.Path)
-			dir.add(DirectoryObject(
-				key = Callback(CategoryMenu, title=item.Title, rootPath=item.Path),
-				title = item.Title
-			))
-		
-		else:
-			Log.Debug("Video: " + item.Title + ", Url: " + item.FeedUrl)
-			#dir.add(Function(DirectoryItem(VideoListMenu, item.Title), title = item.Title, feedUrl = item.FeedUrl, tag = item.Tag))
-			dir.add(DirectoryObject(
-				key = Callback(VideoListMenu, title=item.Title, feedUrl=item.FeedUrl, tag=item.Tag),
-				title = item.Title
-			))
-		
-	return dir
-	
-	
-@route('/video/tsn/videos')
-def VideoListMenu(title, feedUrl, tag):	
-	dir = ObjectContainer(title2 = title)
-	
-	videoList = tsn.GetVideosInList(feedUrl, tag)
-	
-	Log.Debug("displaying video list")
-	
-	
-	for video in videoList:
-	
-		#url = tsn.GetVideoUrl(video.ID)
-		
-		#if URLService.ServiceIdentifierForURL(url) is not None:
-		dir.add(VideoClipObject(
-			key = Callback(PlayVideo, title = video.Title, id = video.ID),
-			rating_key = id,
-			#url = url,
-			title = video.Title,
-			summary = video.Description,
-			thumb = video.ThumbUrl
+		dir.add(DirectoryObject(
+			key = Callback(GameThread, title=item.Title, url=item.Url),
+			title = item.Title,
+			summary = item.Title,
+			thumb = ICON
 		))
-						
-			
-	Log.Debug("done displaying video list")
+		
+		
 	# display empty message
 	if len(dir) == 0:
 		Log.Debug("no videos")
-		return ObjectContainer(header=title, message=L("ErrorNoTitles")) 
+		return ObjectContainer(header=title, message=L("ErrorNoThreads")) 
 	
 	return dir
 
-@indirect
-@route("video/tsn/play")
-def PlayVideo(id, title):	
+@route("/video/reddithockeystreams/thread")
+def GameThread(title, url):
 
-	quality = Prefs["vidquality"]
-	url = tsn.GetVideoUrl(id, quality)
-		
-	Log.Debug("attempting to play: " + url)
+	title = title.replace("–", "")
 	
-	return Redirect(url)
+	#Log.Debug("Trying to set title to: " + title)	
+	
+	dir = ObjectContainer(title2 = title)
+	
+	videos = rhockey.GetVideosInThread(url)
+	
+	for video in videos:
+		media1 = MediaObject(
+			parts = [
+				PartObject(key = Callback(PlayVideo, videoUrl=video.Url))]
+			)		
+		clip = VideoClipObject(
+			key = Callback(PlayVideo, videoUrl = video.Url),
+			rating_key = video.Url,
+			title = video.Title,
+			)
+		
+		clip.add(media1)
+		dir.add(clip)
+	
+	# display empty message
+	if len(dir) == 0:
+		Log.Debug("no videos")
+		return ObjectContainer(header=title, message=L("ErrorNoStreams")) 
+	
+	return dir
+
+def GetMetaData(url):
+	dir = ObjectContainer(title2 = "meta")
+	
+	dir.add(VideoClipObject(
+		key = Callback(PlayVideo, videoUrl=url),
+		title = "title",
+		rating_key = url
+		))
+			
+	return dir
+	
+@indirect
+@route("/video/reddithockeystreams/playvideo")
+def PlayVideo(videoUrl):	
+
+	#quality = Prefs["vidquality"]
+	quality = "3000"
+	
+	#set the quality	
+	videoUrl = videoUrl.replace("{q}", quality)
+		
+	Log.Debug("attempting to play: " + videoUrl)
+	
+	return Redirect(videoUrl)
 	
