@@ -104,7 +104,7 @@ def GetVideosInList(feedUrl, tag):
 		
 		#videoUrl = GetVideoUrl(id)
 		
-		#Log.Debug("videoUrl: " + videoUrl)
+		Log.Debug("video in list title: " + videoTitle)
 				
 		videoList.append(VideoItem(
 			title = videoTitle,
