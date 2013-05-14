@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleIdentifier</key>
+		<string>com.michaeldryden.plugins.tsn</string>
+				
+		<key>PlexClientPlatforms</key>
+		<string>iOS</string>
+		
+		<key>PlexAudioCodec</key>
+		<array>
+			<string>AAC</string>
+		</array>
+		<key>PlexVideoCodec</key>
+		<array>
+			<string>H.264</string>
+		</array>
+		
+		<key>PlexFrameworkVersion</key>
+		<string>2</string>
+		<key>PlexFrameworkFlags</key>
+		<array>
+			<string>UseRealRTMP</string>
+		</array>
+		
+		<!--<key>PlexURLServices</key>
+		<dict>
+			<key>Identifier</key>
+			<string>com.michaeldryden.plugins.tsn</string>
+			<key>URLPatterns</key>
+			<string>http://tsnpmd.akamaihd.edgesuite.net/TSN/?</string>
+			<key>TestURLs</key>
+			<array>
+				<string>http://tsnpmd.akamaihd.edgesuite.net/TSN/2013_05_13/pow_051313_98EAA19F6A76FE6B/pow_051313-Adaptive_07.mp4</string>
+			</array>
+		</dict>-->
+	</dict>
+</plist>
