@@ -6,7 +6,7 @@
 		<string>com.plexapp.plugins.tsn</string>
 				
 		<key>PlexClientPlatforms</key>
-		<string>iOS</string>
+		<string>*</string>
 		
 		<key>PlexAudioCodec</key>
 		<array>
