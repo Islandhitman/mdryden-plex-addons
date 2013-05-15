@@ -1,0 +1,9 @@
+[
+	{
+		"id": "videoQuality",
+		"label": "Video Quality",
+		"type": "enum",
+		"values": ["400", "800", "1200", "1600", "3000", "4500"],
+		"default": "3000"
+	}
+]
