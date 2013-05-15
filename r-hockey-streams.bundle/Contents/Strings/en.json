@@ -5,5 +5,10 @@
 	"SmartGameListTitle": "Smart Game List",
 	"SmartGameListSummary": "Show only search results which appear to be official game threads",
 	"FullGameListTitle": "Full List",
-	"FullGameListSummary": "Show all search results. Use this if the game you are looking for is not in the smart list"
+	"FullGameListSummary": "Show all search results. Use this if the game you are looking for is not in the smart list",
+	"UnofficialLabelFormat": "Unofficial ({0})",
+	"OfficialLabelFormat": "Official ({0})",
+	"SmartGameTitleFormat": "{0} vs {1} - {2}",
+	"OfficialTitle": "Official Streams",
+	"UnofficialTitle": "Unofficial Streams"
 }
