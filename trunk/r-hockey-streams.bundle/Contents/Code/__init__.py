@@ -64,7 +64,7 @@ def GameList(type):
 	
 	for item in items:
 		dir.add(DirectoryObject(
-			key = Callback(GameThread, title=item.Title, url=item.Url),
+			key = Callback(GameThread, url=item.Url),
 			title = item.Title,
 			summary = item.Title,
 			thumb = ICON
@@ -79,16 +79,32 @@ def GameList(type):
 	return dir
 
 @route("/video/reddithockeystreams/thread")
-def GameThread(title, url):
+def GameThread(url):
+	dir = ObjectContainer(title2 = L("OfficialTitle"))
+	
+	videos = rhockey.GetOfficialVideosInThread(url)
+	
+	AddStreamObjects(dir, videos)
+	
+	#add link to unofficial streams
+	dir.add(DirectoryObject(
+			key = Callback(GameThreadUnofficial, url=url),
+			title = L("UnofficialTitle"),
+		))
+	
+	return dir
+	
+def GameThreadUnofficial(url):
+	dir = ObjectContainer(title2 = L("UnofficialTitle"))
+	
+	videos = rhockey.GetAlternativeVideosInThread(url)
+	
+	AddStreamObjects(dir, videos)
+	
+	return dir
 
-	title = title.replace("–", "")
-	
-	#Log.Debug("Trying to set title to: " + title)	
-	
-	dir = ObjectContainer(title2 = title)
-	
-	videos = rhockey.GetVideosInThread(url)
-	
+def AddStreamObjects(container, videos):
+
 	for video in videos:
 		media1 = MediaObject(
 			parts = [
@@ -101,14 +117,8 @@ def GameThread(title, url):
 			)
 		
 		clip.add(media1)
-		dir.add(clip)
-	
-	# display empty message
-	if len(dir) == 0:
-		Log.Debug("no videos")
-		return ObjectContainer(header=title, message=L("ErrorNoStreams")) 
-	
-	return dir
+		container.add(clip)
+
 
 def GetMetaData(url):
 	dir = ObjectContainer(title2 = "meta")
@@ -123,10 +133,10 @@ def GetMetaData(url):
 	
 @indirect
 @route("/video/reddithockeystreams/playvideo")
-def PlayVideo(videoUrl):	
+def PlayVideo(videoUrl):
 
-	#quality = Prefs["vidquality"]
-	quality = "3000"
+	quality = Prefs["videoQuality"]
+	#quality = "3000"
 	
 	#set the quality	
 	videoUrl = videoUrl.replace("{q}", quality)
