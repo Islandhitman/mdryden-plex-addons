@@ -5,19 +5,22 @@ import re, urlparse, string
 SEARCH_URL = "http://www.reddit.com/{0}/search.rss?q={1}+self%3Ayes&sort=new&restrict_sr=on&t=week"
 
 ###############################################
-
-class GameThread:
-	def __init__(self, title, url, date):
+		
+class Game:
+	def __init__(self, title, gameId):
 		self.Title = title
-		self.Url = url
-		self.Date = date
+		self.GameId = gameId
 		
 class Stream:
-	def __init__(self, title, url):
-		self.Title = title
+	def __init__(self, teamName, url):
+		self.TeamName = teamName
 		self.Url = url
 	
 ###############################################	
+
+def FormatStreamUrl(streamFormat, gameId, team):	
+	return streamFormat.format(gameId, string.lower(team))
+
 
 def GetGameList(type, address, keywords, teams):
 
@@ -98,7 +101,7 @@ def CleanGameTitle(title, pubDate, teams):
 	return title
 	
 	
-def GetOfficialVideosInThread(url, findStreamAnchors replaceStreamQualityFunction, getStreamTeamFunction):
+def GetOfficialVideosInThread(url, findStreamAnchors, replaceStreamQualityFunction, getStreamTeamFunction):
 	videoList = []
 	
 	# first try looking in the first item of the rss feed

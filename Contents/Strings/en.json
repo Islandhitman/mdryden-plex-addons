@@ -14,9 +14,9 @@
 	"UnofficialTitle": "Unofficial Streams",
 	"ExternalTitle": "External Streams",
 	
-	"HockeyTitle": "Hockey",
-	"HockeySummary": "Game Threads from /r/Hockey",
+	"NHLTitle": "NHL",
+	"NHLSummary": "NHL Streams",
 	
-	"BasketballTitle": "Basketball",
-	"BasketballSummary": "Game Threads from /r/NBA",
+	"NBATitle": "NBA",
+	"NBASummary": "NBA Streams",
 }
