@@ -1,5 +1,5 @@
 {
-	"MainMenuTitle": "r/Hockey Streams",
+	"MainMenuTitle": "Reddit Sports",
 	"ErrorNoThreads": "No game threads could be found",
 	"ErrorNoStreams": "No streams could be found for this game",
 	"SmartGameListTitle": "Smart Game List",
@@ -8,7 +8,15 @@
 	"FullGameListSummary": "Show all search results. Use this if the game you are looking for is not in the smart list",
 	"UnofficialLabelFormat": "Unofficial ({0})",
 	"OfficialLabelFormat": "Official ({0})",
+	"ExternalLabelFormat": "External ({0})",
 	"SmartGameTitleFormat": "{0} vs {1} - {2}",
 	"OfficialTitle": "Official Streams",
-	"UnofficialTitle": "Unofficial Streams"
+	"UnofficialTitle": "Unofficial Streams",
+	"ExternalTitle": "External Streams",
+	
+	"HockeyTitle": "Hockey",
+	"HockeySummary": "Game Threads from /r/Hockey",
+	
+	"BasketballTitle": "Basketball",
+	"BasketballSummary": "Game Threads from /r/NBA",
 }
