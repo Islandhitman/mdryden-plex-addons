@@ -1,0 +1,52 @@
+import string
+
+####################################################################################################
+def MetadataObjectForURL(url):  
+    # Construct a generic metadata item
+    return VideoClipObject(
+      title = url,
+      summary = url,
+    )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+  return [
+    MediaObject(
+      parts = [PartObject(key=HTTPLiveStreamURL(Callback(PlayVideo, url=url)))],
+      audio_channels = 2
+    )
+  ]
+
+####################################################################################################
+def PlayVideo(url):
+	
+	Log.Debug("service PlayVideo: " + url)
+	
+	playlist = HTTP.Request(url, follow_redirects=False).content
+	
+	playlist_base = ""
+	
+	if string.find(url, "m3u8") > -1: # direct stream, needs base
+		index = string.rfind(url, "/")
+		playlist_base = url[0:index+1]
+
+	return GeneratePlaylist(playlist, playlist_base)
+	
+def GeneratePlaylist(playlist, playlist_base):	
+
+	Log.Debug("base: " + playlist_base)
+
+	new_playlist = '#EXTM3U'
+	for line in playlist.splitlines()[1:-2]:
+		if line.startswith('#'):
+			# take it as is
+			Log.Debug("line: " + line)
+			new_playlist = new_playlist + "\n" + line
+		else:
+			line = playlist_base + line
+			Log.Debug("line: " + line)
+			new_playlist = new_playlist + "\n" + line			
+
+	return new_playlist
+	
