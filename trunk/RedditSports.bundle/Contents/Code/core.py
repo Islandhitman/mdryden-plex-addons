@@ -4,6 +4,8 @@ import re, urlparse, string
 
 SEARCH_URL = "http://www.reddit.com/{0}/search.rss?q={1}+self%3Ayes&sort=new&restrict_sr=on&t=week"
 
+QUALITY_MARKER = "(q)"  
+
 ###############################################
 
 class GameThread:
@@ -45,7 +47,7 @@ def GetGameList(type, address, keywords, teams):
 		itemUrl = item.xpath("./link/text()")[0]
 		pubDate = item.xpath("./pubDate/text()")[0]
 				
-		Log.Debug("Title: " + itemTitle + ", Url: " + itemUrl + ", Date: " + pubDate)
+		#Log.Debug("Title: " + itemTitle + ", Url: " + itemUrl + ", Date: " + pubDate)
 		
 		thread = GameThread(title = itemTitle.strip(), url = itemUrl, date = pubDate)
 		
@@ -67,10 +69,18 @@ def IsGameThread(title, teams):
 	# names of each team
 	count = 0
 	
+	Log.Debug("is '" + title + "' a game thread?")
+	
 	for team in teams:
 		index = string.find(title, team)
+		#Log.Debug("index of: " + team + " = " + str(index)) 
 		if index > -1:
 			count += 1
+			
+	if count == 2:
+		Log.Debug("Yes")
+	else:
+		Log.Debug("No")
 	
 	return (count == 2)
 	
@@ -97,113 +107,8 @@ def CleanGameTitle(title, pubDate, teams):
 	
 	return title
 	
-	
-def GetOfficialVideosInThread(url, findStreamAnchors replaceStreamQualityFunction, getStreamTeamFunction):
-	videoList = []
-	
-	# first try looking in the first item of the rss feed
-	thread = XML.ElementFromURL(url + ".rss")
-	
-	selfPost = thread.xpath("//item")[0]	
 
-	description = HTML.ElementFromString(selfPost.xpath("./description/text()")[0])
-	Log.Debug("Found description: " + selfPost.xpath("./description/text()")[0])
-	
-	#//td[contains(label, 'Choice 1')]/input
-	streamsList = description.xpath("//a[contains(@href, 'm3u8')]")
-	
-	for stream in streamsList:
-		#Log.Debug("Found stream: " + XML.StringFromElement(stream))
-		streamUrl = stream.xpath("./@href")[0]
-		Log.Debug("Found stream: " + streamUrl)
-		streamUrl = replaceStreamQualityFunction(streamUrl)
-		Log.Debug("Found stream: " + streamUrl)
 		
-		#old way used anchor text, new way is more standardized
-		#title = stream.xpath("./text()")[0]
-		team = getStreamTeamFunction(streamUrl)
-		title = str(L("OfficialLabelFormat")).format(team)
-		
-		videoList.append(Stream(title = title, url = streamUrl))
-		
-	return videoList
-	
-	return videoList
-	
-def GetAlternativeVideosInThread(url, replaceStreamQualityFunction, getStreamTeamFunction, findStreamsInTextFunction):
-	videoList = []
-	knownUrls = [] #tracks the urls we've already added, since any() isn't supported
-	
-	thread = XML.ElementFromURL(url + ".rss")
-	items = thread.xpath("//item")
-		
-	# we need to loop through all comments and find any which contain a stream.
-	for item in items:
-		#GetVideosInComment only finds comments in a proper <a> tag, so we need to parse differently
-		comment = item.xpath("./description/text()")[0]
-		streamUrlsInComment = findStreamsInTextFunction(comment)
-		
-		#loop through the streams we found and clean em up to make sure they aren't duplicates before we add them
-		for streamUrl in streamUrlsInComment:		
-			url = replaceStreamQualityFunction(streamUrl)
-			#make sure it's not a duplicate
-			if (url in knownUrls) == False:
-				# video is unique, add it.
-				#Log.Debug("Stream: " + url)
-				team = getStreamTeamFunction(url)
-				title = str(L("UnofficialLabelFormat")).format(team)
-				
-				videoList.append(Stream(title = title, url = url))
-				knownUrls.append(url)
-					
-	Log.Debug("VideoList: " + str(len(videoList)))
-	return videoList
-
-
-def GetExternalVideosInThread(url, replaceStreamQualityFunction, getStreamTeamFunction, isStreamUrlFunction, findStreamsInTextFunction):
-	videoList = []
-	knownUrls = [] #tracks the urls we've already added, since any() isn't supported
-	
-	thread = XML.ElementFromURL(url + ".rss")
-	items = thread.xpath("//item")	
-
-	# not looping all comments for now, just looking at the self post
-	selfPost = thread.xpath("//item")[0]
-
-	description = HTML.ElementFromString(selfPost.xpath("./description/text()")[0])
-	Log.Debug("Found description: " + selfPost.xpath("./description/text()")[0])
-	
-	streamsList = description.xpath("//a[contains(text(), 'vlc') or contains(text(), 'VLC') or contains(text(), 'Vlc')]")
-	
-	for item in streamsList:
-		Log.Debug("Found possible external link:" + HTML.StringFromElement(item))
-		url = item.xpath("./@href")[0]
-		
-		if isStreamUrlFunction(url) == True:
-			Log.Debug("Skipping '" + url + "' - appears to be an official stream")
-		else:
-			Log.Debug("Attempting to open external url: " + url)
-			externalPage = HTML.ElementFromURL(url)
-			content = HTML.StringFromElement(externalPage)
-			# search the page just like a comment
-			streamsInPage = findStreamsInTextFunction(content)
-			
-			for stream in streamsInPage:
-				if IsValidStream(stream):
-					Log.Debug("Found external stream: " + stream)
-					
-					url = replaceStreamQualityFunction(stream)
-					#make sure it's not a duplicate
-					if (url in knownUrls) == False:
-						# video is unique, add it.
-						#Log.Debug("Stream: " + url)
-						team = getStreamTeamFunction(url)
-						title = str(L("ExternalLabelFormat")).format(team)
-						  
-						videoList.append(Stream(title = title, url = url))
-						knownUrls.append(url)
-
-	return videoList
 	
 def IsValidStream(url):
 	# checks for some common errors in the url, like spaces (happens from external blog posts, or if someone

@@ -17,20 +17,18 @@ SUPPORTED_SUBREDDITS = {
 		"address":"r/hockey", 
 		"keywords":"game+thread", 
 		"teams":hockey.TEAMS, 
-		"replaceStreamQualityFunction":hockey.ReplaceStreamQuality, 
-		"getStreamTeamFunction":hockey.GetStreamTeam,
-		"findStreamsInTextFunction":hockey.FindStreamsInText,
-		"isStreamUrlFunction":hockey.IsStreamUrl
+		"getOfficialVideosFunction":hockey.GetOfficialVideosInThread,
+		"getAlternativeVideosFunction":hockey.GetAlternativeVideosInThread,
+		"getExternalVideosFunction":hockey.GetExternalVideosInThread
 		},
 	"Basketball": {
 		"name":"Basketball",
 		"address":"r/nba",
 		"keywords":"game+thread",
 		"teams":basketball.TEAMS,
-		"replaceStreamQualityFunction":basketball.ReplaceStreamQuality, 
-		"getStreamTeamFunction":basketball.GetStreamTeam,
-		"findStreamsInTextFunction":basketball.FindStreamsInText,
-		"isStreamUrlFunction":basketball.IsStreamUrl
+		"getOfficialVideosFunction":basketball.GetOfficialVideosInThread,
+		"getAlternativeVideosFunction":basketball.GetAlternativeVideosInThread,
+		"getExternalVideosFunction":basketball.GetExternalVideosInThread
 		}
 	}
 
@@ -121,10 +119,7 @@ def GameThread(url, name):
 	
 	config = SUPPORTED_SUBREDDITS[name]
 	
-	videos = core.GetOfficialVideosInThread(url, 
-		config["replaceStreamQualityFunction"], 
-		config["getStreamTeamFunction"]
-		)
+	videos = config["getOfficialVideosFunction"](url)
 		
 	AddStreamObjects(dir, videos)
 	
@@ -147,17 +142,13 @@ def GameThreadUnofficial(url, name):
 	
 	config = SUPPORTED_SUBREDDITS[name]
 	
-	videos = core.GetAlternativeVideosInThread(url, 
-		config["replaceStreamQualityFunction"], 
-		config["getStreamTeamFunction"],
-		config["findStreamsInTextFunction"]
-		)
+	videos = config["getAlternativeVideosFunction"](url) 
 	 
 	AddStreamObjects(dir, videos)
 	
 	# display empty message
 	if len(dir) == 0:
-		return ObjectContainer(header=L("UnofficialTitle"), message=L("ErrorNoThreads"))
+		return ObjectContainer(header=L("UnofficialTitle"), message=L("ErrorNoStreams"))
 	
 	return dir
 	
@@ -167,59 +158,48 @@ def GameThreadExternal(url, name):
 	
 	config = SUPPORTED_SUBREDDITS[name]
 	
-	videos = core.GetExternalVideosInThread(url, 
-		config["replaceStreamQualityFunction"], 
-		config["getStreamTeamFunction"],
-		config["isStreamUrlFunction"],
-		config["findStreamsInTextFunction"]
-		)
+	videos = config["getExternalVideosFunction"](url)
 	
 	AddStreamObjects(dir, videos)
 	
 	# display empty message
 	if len(dir) == 0:
-		return ObjectContainer(header=L("ExternalTitle"), message=L("ErrorNoThreads"))
+		return ObjectContainer(header=L("ExternalTitle"), message=L("ErrorNoStreams"))
 	
 	return dir
 
 def AddStreamObjects(container, videos):
 
+	quality = Prefs["videoQuality"]
+	
 	for video in videos:
-		media1 = MediaObject(
-			parts = [
-				PartObject(key = Callback(PlayVideo, videoUrl=video.Url))]
-			)		
+		#media1 = MediaObject(
+		#	parts = [
+		#		PartObject(key = HTTPLiveStreamURL(Callback(PlayVideo, videoUrl=video.Url)))]
+		#	)
+		# add quality to url
+		video.Url = video.Url.replace(core.QUALITY_MARKER, quality)
 		clip = VideoClipObject(
-			key = Callback(PlayVideo, videoUrl = video.Url),
-			rating_key = video.Url,
+			#key = HTTPLiveStreamURL(Callback(PlayVideo, videoUrl = video.Url)),
+			url = video.Url,
+			#rating_key = video.Url,
 			title = video.Title,
 			)
 		
-		clip.add(media1)
+		#clip.add(media1)
 		container.add(clip)
 
 
-def GetMetaData(url):
-	dir = ObjectContainer(title2 = "meta")
+#@indirect
+#def PlayVideo(videoUrl):
+#
+#	quality = Prefs["videoQuality"]
+#	#quality = "3000"
+#	
+#	#set the quality	
+#	videoUrl = videoUrl.replace("{q}", quality)
+#		
+#	Log.Debug("attempting to play: " + videoUrl)
 	
-	dir.add(VideoClipObject(
-		key = Callback(PlayVideo, videoUrl=url),
-		title = "title",
-		rating_key = url
-		))
-			
-	return dir
-	
-@indirect
-def PlayVideo(videoUrl):
-
-	quality = Prefs["videoQuality"]
-	#quality = "3000"
-	
-	#set the quality	
-	videoUrl = videoUrl.replace("{q}", quality)
-		
-	Log.Debug("attempting to play: " + videoUrl)
-	
-	return Redirect(videoUrl)
+#	return Redirect(videoUrl)
 	
