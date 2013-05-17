@@ -11,7 +11,7 @@ ICON = 'icon-default.png'
 
 # address should not start with a slash
 # keywords should be url encoded
-SUPPORTED_SUBREDDITS = {
+SUPPORTED_SUBREDDITS = { 
 	"Hockey": {
 		"name":"Hockey", 
 		"address":"r/hockey", 
@@ -21,15 +21,15 @@ SUPPORTED_SUBREDDITS = {
 		"getAlternativeVideosFunction":hockey.GetAlternativeVideosInThread,
 		"getExternalVideosFunction":hockey.GetExternalVideosInThread
 		},
-	"Basketball": {
-		"name":"Basketball",
-		"address":"r/nba",
-		"keywords":"game+thread",
-		"teams":basketball.TEAMS,
-		"getOfficialVideosFunction":basketball.GetOfficialVideosInThread,
-		"getAlternativeVideosFunction":basketball.GetAlternativeVideosInThread,
-		"getExternalVideosFunction":basketball.GetExternalVideosInThread
-		}
+	# "Basketball": {
+		# "name":"Basketball",
+		# "address":"r/nba",
+		# "keywords":"game+thread",
+		# "teams":basketball.TEAMS,
+		# "getOfficialVideosFunction":basketball.GetOfficialVideosInThread,
+		# "getAlternativeVideosFunction":basketball.GetAlternativeVideosInThread,
+		# "getExternalVideosFunction":basketball.GetExternalVideosInThread
+		# }
 	}
 
 ###############################################
