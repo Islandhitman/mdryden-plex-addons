@@ -69,7 +69,7 @@ def GetOfficialVideosInThread(url):
 		team = GetStreamTeam(streamUrl)
 		title = str(L("OfficialLabelFormat")).format(team)
 		
-		videoList.append(Stream(title = title, url = streamUrl))
+		videoList.append(core.Stream(title = title, url = streamUrl))
 		
 	return videoList
 	
