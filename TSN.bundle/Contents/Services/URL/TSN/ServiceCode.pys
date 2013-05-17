@@ -1,0 +1,190 @@
+import string, re, urlparse
+
+####################################################################################################
+def MetadataObjectForURL(url):  
+    # Construct a generic metadata item
+    return VideoClipObject(
+      title = url,
+      summary = url,
+    )
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+	if string.find(url, "m3u8") > 0:		
+		# live stream url
+		Log.Debug("live stream")
+		return [
+			MediaObject(
+				parts = [PartObject(key=HTTPLiveStreamURL(Callback(PlayLiveStream, url=url)))],
+				audio_channels = 2
+			)
+		]
+	
+	if string.find(url, "feed") > 0:
+		Log.Debug("category playlist")
+		return [
+			MediaObject(
+				parts = [PartObject(key=HTTPLiveStreamURL(Callback(PlayCategory, url=url)))],
+				audio_channels = 2
+			)
+		]
+		
+	#unable to handle
+	raise Exception("Unknown media object")
+		
+####################################################################################################
+
+def PlayLiveStream(url):
+	
+	Log.Debug("service PlayVideo: " + url)
+	
+	playlist = HTTP.Request(url, follow_redirects=False).content
+	
+	#TSN m3u8's have the full URL inside and don't need the base.
+	#index = string.rfind(url, "/")
+	#playlist_base = url[0:index+1]
+
+	return GeneratePlaylist(playlist)#, playlist_base)
+	
+	
+def GeneratePlaylist(playlist):	
+
+	#Log.Debug("base: " + playlist_base)
+	#TSN M3U8s have adaptive quality - this works well in the web and iphone clients, but not in the windows client
+	# Not fixing for now.
+	new_playlist = '#EXTM3U'
+	for line in playlist.splitlines()[1:-2]:
+		if line.startswith('#'):
+			# take it as is
+			Log.Debug("line: " + line)
+			new_playlist = new_playlist + "\n" + line
+		else:
+			#line = playlist_base + line
+			Log.Debug("line: " + line)
+			new_playlist = new_playlist + "\n" + line			
+
+	return new_playlist
+	
+def PlayCategory(url):
+	Log.Debug("Creating category feed for: " + url)
+	
+	parts = url.split("?")
+	params = parts[1].split("&")
+	
+	for param in params:
+		kvp = param.split("=")
+		if kvp[0] == "quality":
+			quality = kvp[1]
+		else:
+			feedId = kvp[1]
+			
+	Log.Debug("FeedID = " + feedId)	
+	Log.Debug("Quality = " + quality)
+	
+	feedUrl = "http://esi.ctv.ca/datafeedrss/vhBinData.aspx?bid=" + feedId
+	
+	videoList = GetVideosInList(feedUrl)
+	
+	playlist = '#EXTM3U'
+	count = 1
+	for video in videoList:
+		url = GetVideoUrl(video.ID, quality)
+		
+		if string.find(url, "m3u8") > -1:
+			continue
+		
+		title = video.Title.replace(":", "")
+		playlist = playlist + "\n#EXT-X-STREAM-INF:PROGRAM-ID=" + str(count) # + + str(video.DurationMilliseconds / 1000) + "," + title
+		count += 1
+		playlist = playlist + "\n" + url
+	
+	Log.Debug(playlist)
+	
+	HTTP.Headers["Referer"] = "http://cls.ctvdigital.net/"
+	
+	return playlist
+	
+	
+####################################################################
+# Maybe there's a better way than copying this from the core code?
+VIDEO_URL = "http://esi.ctv.ca/datafeed/urlgenjs.aspx?vid="
+CACHE_TIME = 3600
+
+class VideoItem:
+	def __init__(self, title, id, description, thumbUrl, durationMilliseconds):
+		self.Title = title
+		self.ID = id
+		self.Description = description
+		self.ThumbUrl = thumbUrl
+		self.DurationMilliseconds = durationMilliseconds
+
+def GetVideosInList(feedUrl):
+
+	videoList = []
+	
+	Log.Debug("opening feed: " + feedUrl)
+
+	items = XML.ElementFromURL(feedUrl, cacheTime = CACHE_TIME)
+	videos = items.xpath("//item")
+	
+	for video in videos:
+		
+		id = video.xpath("./id/text()")[0]
+		type = video.xpath("./type/text()")[0]
+		videoTitle = video.xpath("./title/text()")[0]
+		description = video.xpath("./description/text()")[0]
+		thumb = video.xpath("./imgUrl/text()")[0]
+		durationSeconds = video.xpath("./duration/text()")[0]
+		durationMilliseconds = int(durationSeconds) * 1000		
+		
+		#videoUrl = GetVideoUrl(id)
+		
+		#Log.Debug("video in list title: " + videoTitle)
+				
+		videoList.append(VideoItem(
+			title = videoTitle,
+			id = id,
+			description = description,
+			thumbUrl = thumb,
+			durationMilliseconds = durationMilliseconds
+		))
+	
+	return videoList
+
+
+def GetVideoUrl(id, quality):
+	tempurl = VIDEO_URL + id
+	
+	#Log.Debug("opening " + tempurl)
+	 
+	data = HTML.ElementFromURL(tempurl)
+	
+	#Log.Debug("data: " + HTML.StringFromElement(data))
+	
+	#get the entire rtmpe:// out of the contents of the esi.ctv.ca
+	temprtmpe = re.compile('Video.Load\({url:\'(.+?)\'').findall(HTML.StringFromElement(data))
+	
+	#Log.Debug("rtmpe: " + temprtmpe[0])
+
+	o = urlparse.urlparse(temprtmpe[0])
+	vidquality = int(quality)
+
+	# raise an error if we encounter an URL we don't know how to parse
+	if o.netloc == 'tsnpmd.akamaihd.edgesuite.net':	 
+		url = temprtmpe[0]
+		#starting in version 0.1.5 (March 19 2013) tsn started using adaptive quality in their http streams
+		#the quality now goes up to 720p (adaptive_08)
+		url = url.replace('Adaptive_04','Adaptive_0' + str(vidquality+3))
+		
+	elif o.netloc == "tsnhd-i.akamaihd.net":
+		# TSN started throwing in some m3u8 playlists from this site, return them directly
+		url = temprtmpe[0]
+	
+	else:	
+		Log.Debug("o = " + temprtmpe[0])
+		Log.Debug("netloc = " + o.netloc)
+		raise Exception("Unknown video location")	
+
+	return url
+	

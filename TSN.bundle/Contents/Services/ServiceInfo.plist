@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>URL</key>
+		<dict>
+			<key>TSN</key>
+			<dict>
+				<key>TestURLs</key>
+				<array>
+					<string>http://tsnpmd.akamaihd.edgesuite.net/TSN/2013_05_16/cabbie_051613_646FCCBB8AAFC658/cabbie_051613-Adaptive_07.mp4</string>
+					<string>http://tsnhd-i.akamaihd.net/i/TSN/2013_05_17/latepanelsc_051613_4B26EFE7F992432F/latepanelsc_051613-Adaptive_,01,02,03,04,05,06,07,08,.mp4.csmil/master.m3u8</string>
+					<string>http://esi.ctv.ca/datafeedrss/vhBinData.aspx?bid=14070</string>
+				</array>
+				<key>URLPatterns</key>
+				<array>
+					<string>^http://tsnpmd.akamaihd.edgesuite.net.+</string>
+					<string>^http://tsnhd-i.akamaihd.net/.+</string>
+					<string>^http://esi.ctv.ca/datafeedrss/vhBinData.aspx.+</string>
+				</array>
+			</dict>
+		</dict>
+	</dict>
+</plist>
