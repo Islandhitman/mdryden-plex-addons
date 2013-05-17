@@ -62,19 +62,19 @@ def GetItemList(rootPath):
 		itemTag = ""
 		try: itemTag = item.xpath("./tag/text()")[0]
 		except:
-			Log.Debug("no tag for title " + rootPath)
+			#Log.Debug("no tag for title " + rootPath)
 			pass
 				
-		Log.Debug("Title: " + itemTitle + " URL: " + itemUrl)
+		#Log.Debug("Title: " + itemTitle + " URL: " + itemUrl)
 		
 		if itemUrl == "":
 			# no url means it's a top level category
 			#Log.Debug("Top level category: " + title)
 			subPath = path + "[" + str(index) + "]"
-			Log.Debug("Category: " + itemTitle + ", Path: " + subPath)
+			#Log.Debug("Category: " + itemTitle + ", Path: " + subPath)
 			itemList.append(CategoryItem(title = itemTitle, path = subPath))
 		else:
-			Log.Debug("found video list " + itemTitle)
+			#Log.Debug("found video list " + itemTitle)
 			itemList.append(VideoListItem(title = itemTitle, feedUrl = itemUrl, tag = itemTag))
 		
 		#dir.Append(Function(DirectoryItem(ChannelMenu, title), urlLatest = url))
@@ -83,7 +83,7 @@ def GetItemList(rootPath):
 		
 	return itemList
 	
-def GetVideosInList(feedUrl, tag):
+def GetVideosInList(feedUrl):
 
 	videoList = []
 	
@@ -104,7 +104,7 @@ def GetVideosInList(feedUrl, tag):
 		
 		#videoUrl = GetVideoUrl(id)
 		
-		Log.Debug("video in list title: " + videoTitle)
+		#Log.Debug("video in list title: " + videoTitle)
 				
 		videoList.append(VideoItem(
 			title = videoTitle,
@@ -120,7 +120,7 @@ def GetVideoUrl(id, quality):
 	tempurl = VIDEO_URL + id
 	
 	#Log.Debug("opening " + tempurl)
-	
+	 
 	data = HTML.ElementFromURL(tempurl)
 	
 	#Log.Debug("data: " + HTML.StringFromElement(data))
@@ -134,12 +134,19 @@ def GetVideoUrl(id, quality):
 	vidquality = int(quality)
 
 	# raise an error if we encounter an URL we don't know how to parse
-	if o.netloc != 'tsnpmd.akamaihd.edgesuite.net':
-		raise Exception("Unknown video location")
+	if o.netloc == 'tsnpmd.akamaihd.edgesuite.net':	 
+		url = temprtmpe[0]
+		#starting in version 0.1.5 (March 19 2013) tsn started using adaptive quality in their http streams
+		#the quality now goes up to 720p (adaptive_08)
+		url = url.replace('Adaptive_04','Adaptive_0' + str(vidquality+3))
 		
-	url = temprtmpe[0]
-	#starting in version 0.1.5 (March 19 2013) tsn started using adaptive quality in their http streams
-	#the quality now goes up to 720p (adaptive_08)
-	url = url.replace('Adaptive_04','Adaptive_0' + str(vidquality+3))
+	elif o.netloc == "tsnhd-i.akamaihd.net":
+		# TSN started throwing in some m3u8 playlists from this site, return them directly
+		url = temprtmpe[0]
+	
+	else:	
+		Log.Debug("o = " + temprtmpe[0])
+		Log.Debug("netloc = " + o.netloc)
+		raise Exception("Unknown video location")	
 
 	return url
