@@ -16,7 +16,7 @@
 				<array>
 					<string>^http://tsnpmd.akamaihd.edgesuite.net.+</string>
 					<string>^http://tsnhd-i.akamaihd.net/.+</string>
-					<string>^http://esi.ctv.ca/datafeedrss/vhBinData.aspx.+</string>
+					<string>^http://esi.ctv.ca/datafeedrss/.+</string>
 				</array>
 			</dict>
 		</dict>

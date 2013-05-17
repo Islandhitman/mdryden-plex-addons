@@ -23,12 +23,8 @@ def MediaObjectsForURL(url):
 	
 	if string.find(url, "feed") > 0:
 		Log.Debug("category playlist")
-		return [
-			MediaObject(
-				parts = [PartObject(key=HTTPLiveStreamURL(Callback(PlayCategory, url=url)))],
-				audio_channels = 2
-			)
-		]
+		return GetCategoryPlaylistObject(url)
+		
 		
 	#unable to handle
 	raise Exception("Unknown media object")
@@ -66,44 +62,28 @@ def GeneratePlaylist(playlist):
 
 	return new_playlist
 	
-def PlayCategory(url):
-	Log.Debug("Creating category feed for: " + url)
 	
-	parts = url.split("?")
-	params = parts[1].split("&")
+def GetCategoryPlaylistObject(feedUrl):
+	Log.Debug("Creating category feed for: " + feedUrl)
 	
-	for param in params:
-		kvp = param.split("=")
-		if kvp[0] == "quality":
-			quality = kvp[1]
-		else:
-			feedId = kvp[1]
-			
-	Log.Debug("FeedID = " + feedId)	
+	qIndex = string.find(feedUrl, "quality=") + 8
+	quality = feedUrl[qIndex:qIndex+1]
+	
 	Log.Debug("Quality = " + quality)
-	
-	feedUrl = "http://esi.ctv.ca/datafeedrss/vhBinData.aspx?bid=" + feedId
 	
 	videoList = GetVideosInList(feedUrl)
 	
-	playlist = '#EXTM3U'
-	count = 1
+	mo = MediaObject(audio_channels = 2)
+	
 	for video in videoList:
 		url = GetVideoUrl(video.ID, quality)
-		
-		if string.find(url, "m3u8") > -1:
-			continue
-		
-		title = video.Title.replace(":", "")
-		playlist = playlist + "\n#EXT-X-STREAM-INF:PROGRAM-ID=" + str(count) # + + str(video.DurationMilliseconds / 1000) + "," + title
-		count += 1
-		playlist = playlist + "\n" + url
+		Log.Debug(url)
+		mo.add(PartObject(key=Callback(DirectPlay, url=url)))
 	
-	Log.Debug(playlist)
+	return [mo]
 	
-	HTTP.Headers["Referer"] = "http://cls.ctvdigital.net/"
-	
-	return playlist
+def DirectPlay(url):
+	return Redirect(url)
 	
 	
 ####################################################################

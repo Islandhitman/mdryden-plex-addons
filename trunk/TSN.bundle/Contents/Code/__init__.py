@@ -70,17 +70,15 @@ def VideoListMenu(title, feedUrl, tag):
 	
 	#Log.Debug("displaying video list")	
 	quality = Prefs["vidquality"]
-	
-	#if len(videoList) > 0:
-	#	# add playlist item
-	#	categoryUrl = feedUrl + "&quality=" + quality
-	#	dir.add(VideoClipObject(
-	#		#key = HTTPLiveStreamURL(Callback(PlayAll, feedUrl = feedUrl, tag = tag)),
-	#		#rating_key = feedUrl,
-	#		url = categoryUrl,
-	#		title = "Play All",
-	#		summary = "Play all videos in '" + title + "'."
-	#	))
+	 
+	if len(videoList) > 0:
+		# add playlist item
+		categoryUrl = feedUrl + "&quality=" + quality
+		dir.add(VideoClipObject(
+			url = categoryUrl,
+			title = "Play All",
+			summary = "Play all videos in '" + title + "'."
+		))
 		
 		
 	for video in videoList:			
