@@ -1,13 +1,13 @@
-import re, urlparse, string, datetime, lxml
+import re, urlparse, string, datetime
 from dateutil import parser
 from dateutil import tz
 
 ###############################################
 
-SEARCH_URL = "http://www.reddit.com/r/Sports_Streams/search.rss?q={0}&sort=new&t=week&restrict_sr=on"
-STREAM_URL_FORMAT = "http://nlds{0}.cdnak.neulion.com/nlds/nhl/{1}/as/live/{1}_hd_(q).m3u8"
+SEARCH_URL = "http://www.reddit.com/r/Sports_Streams/search.rss?q={sport}&sort=new&t=week&restrict_sr=on"
+STREAM_URL_FORMAT = "http://nlds{server}.cdnak.neulion.com/nlds/nhl/{streamName}/as/live/{streamName}_hd_{q}.m3u8"
 
-QUALITY_MARKER = "(q)" 
+QUALITY_MARKER = "{q}" 
 
 STREAM_AVAILABLE_MINUTES_BEFORE = 20 
 
@@ -47,8 +47,8 @@ def GetGameList(sport):
 	# year = thedate.strftime("%Y")
 	# month = thedate.strftime("%m")
 	# day = thedate.strftime("%d")
-	
-	url = SEARCH_URL.format(sport)#, year, month, day)
+	#stupid osx doesn't have .format available....	
+	url = SEARCH_URL.replace("{sport}", sport)#, year, month, day)
 	
 	#Log.Debug(url)
 	
@@ -133,15 +133,15 @@ def GetGameStreams(sport, gameId):
 		Log.Debug("game starts in: " + str(minutesToStart))
 		
 		available = minutesToStart <= STREAM_AVAILABLE_MINUTES_BEFORE
-		
+		 
 		if game.HomeServer != "":
-			title = str(L("HomeStreamLabelFormat")).format(game.HomeCity)
-			url = STREAM_URL_FORMAT.format(game.HomeServer, game.HomeStreamName)
+			title = str(L("HomeStreamLabelFormat")).replace("{city}", game.HomeCity)
+			url = STREAM_URL_FORMAT.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
 			streams.append(Stream(title, url, available))
 			
 		if game.AwayServer != "":
-			title = str(L("AwayStreamLabelFormat")).format(game.AwayCity)
-			url = STREAM_URL_FORMAT.format(game.AwayServer, game.AwayStreamName)
+			title = str(L("AwayStreamLabelFormat")).replace("{city}", game.AwayCity)
+			url = STREAM_URL_FORMAT.replace("{server}", game.AwayServer).replace("{streamName}",game.AwayStreamName)
 			streams.append(Stream(title, url, available))
 		
 	return streams, available
