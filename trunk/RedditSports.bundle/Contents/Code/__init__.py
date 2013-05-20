@@ -73,8 +73,7 @@ def SportMenu(sport):
 		#timeDiff = item.UtcStart - datetime.datetime.utcnow()
 		#Log.Debug("time diff: " + str(timeDiff))
 		
-		title = str(L("MatchupFormat")).format(item.AwayCity, item.HomeCity, localStart)
-		#todo: format in module
+		title = str(L("MatchupFormat")).replace("{away}", item.AwayCity).replace("{home}", item.HomeCity).replace("{time}", localStart)
 		summary = "summary goes here"
 		dir.add(DirectoryObject(
 			key = Callback(StreamMenu, sport = sport, gameId = item.ID, title = title),
@@ -84,7 +83,7 @@ def SportMenu(sport):
 		
 		 
 	# display empty message
-	if len(dir) == 0:
+	if len(dir) == 0: 
 		Log.Debug("no games")
 		return ObjectContainer(header=L(sport + "Title"), message=L("ErrorNoGames")) 
 		
@@ -99,7 +98,7 @@ def StreamMenu(sport, gameId, title):
 	quality = Prefs["videoQuality"]
 	
 	if not available:
-		return ObjectContainer(header=L(sport + "Title"), message=str(L("ErrorStreamsNotReady").format(core.STREAM_AVAILABLE_MINUTES_BEFORE)))	
+		return ObjectContainer(header=L(sport + "Title"), message=str(L("ErrorStreamsNotReady").replace("{minutes}", core.STREAM_AVAILABLE_MINUTES_BEFORE)))	
 	
 	for stream in streams:
 	
