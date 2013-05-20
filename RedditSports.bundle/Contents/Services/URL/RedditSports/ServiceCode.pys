@@ -1,7 +1,7 @@
 import string
 
 ####################################################################################################
-def MetadataObjectForURL(url):  
+def MetadataObjectForURL(url):
     # Construct a generic metadata item
     return VideoClipObject(
       title = url,

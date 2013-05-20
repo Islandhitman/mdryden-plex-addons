@@ -1,34 +1,56 @@
-import re, urlparse, string
+import re, urlparse, string, datetime, lxml
+from dateutil import parser
+from dateutil import tz
 
 ###############################################
 
-SEARCH_URL = "http://www.reddit.com/{0}/search.rss?q={1}+self%3Ayes&sort=new&restrict_sr=on&t=week"
+SEARCH_URL = "http://www.reddit.com/r/Sports_Streams/search.rss?q={0}&sort=new&t=week&restrict_sr=on"
+STREAM_URL_FORMAT = "http://nlds{0}.cdnak.neulion.com/nlds/nhl/{1}/as/live/{1}_hd_(q).m3u8"
 
-QUALITY_MARKER = "(q)"  
+QUALITY_MARKER = "(q)" 
+
+STREAM_AVAILABLE_MINUTES_BEFORE = 20 
 
 ###############################################
 
-class GameThread:
-	def __init__(self, title, url, date):
-		self.Title = title
-		self.Url = url
-		self.Date = date
+class Game:
+	def __init__(self, id, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName):
+		self.ID = id
+		self.UtcStart = utcStart
+		self.HomeCity = homeCity
+		self.AwayCity = awayCity
+		self.HomeServer = homeServer
+		self.AwayServer = awayServer
+		self.HomeStreamName = homeStreamName
+		self.AwayStreamName = awayStreamName
+		
+# class Game:
+	# def __init__(self, id, homeCity, awayCity):
+		# self.ID = id
+		# self.HomeCity = homeCity
+		# self.AwayCity = awayCity
+		
 		
 class Stream:
-	def __init__(self, title, url):
+	def __init__(self, title, url, available):
 		self.Title = title
 		self.Url = url
+		self.Available = available
 	
 ###############################################	
 
-def GetGameList(type, address, keywords, teams):
+def GetGameList(sport):
 
-	Log.Debug("GetGameList()")
-	itemList = []
-
-	url = SEARCH_URL.format(address, keywords)
+	#Log.Debug("GetGameList()")
 	
-	Log.Debug(url)
+	# thedate = datetime.datetime.now()
+	# year = thedate.strftime("%Y")
+	# month = thedate.strftime("%m")
+	# day = thedate.strftime("%d")
+	
+	url = SEARCH_URL.format(sport)#, year, month, day)
+	
+	#Log.Debug(url)
 	
 	#try:
 	threadList = XML.ElementFromURL(url)
@@ -38,90 +60,89 @@ def GetGameList(type, address, keywords, teams):
 	
 	items = threadList.xpath("//item")
 	
-	index = 1
-	
-	for item in items:
-		#Log.Debug(XML.StringFromElement(item))
+	if len(items) == 0:
+		# no threads in past week
+		return []
 		
-		itemTitle = item.xpath("./title/text()")[0]
-		itemUrl = item.xpath("./link/text()")[0]
-		pubDate = item.xpath("./pubDate/text()")[0]
-				
-		#Log.Debug("Title: " + itemTitle + ", Url: " + itemUrl + ", Date: " + pubDate)
-		
-		thread = GameThread(title = itemTitle.strip(), url = itemUrl, date = pubDate)
-		
-		# if using a smart list, only add if it's a game thread
-		if type == "smart":
-			if (IsGameThread(thread.Title, teams)):
-				# clean the title
-				thread.Title = CleanGameTitle(thread.Title, thread.Date, teams)
-				itemList.append(thread)
-				
-		else: #always add if we're in full mode
-			itemList.append(thread)
+	# we're only concerned with the most recent game
+	item = items[0]
+	threadUrl = item.xpath("./link/text()")[0]
 	
-	return itemList
+	#Log.Debug("Opening thread: " + threadUrl)
 	
-def IsGameThread(title, teams):
-	# we'll assume that all game threads will contain 2 teams in the title
-	# this should filter most out, since most posters are too lazy to type the full
-	# names of each team
-	count = 0
+	thread = XML.ElementFromURL(threadUrl + ".rss")
+	selfPost = thread.xpath("//item")[0]
+	description = HTML.ElementFromString(selfPost.xpath("./description/text()")[0])
 	
-	Log.Debug("is '" + title + "' a game thread?")
+	gamesXml = XML.ElementFromString(description.xpath("//p/text()")[0])
+	#cache xml
+	Data.Save(sport, XML.StringFromElement(gamesXml))
 	
-	for team in teams:
-		index = string.find(title, team)
-		#Log.Debug("index of: " + team + " = " + str(index)) 
-		if index > -1:
-			count += 1
-			
-	if count == 2:
-		Log.Debug("Yes")
+	return GamesXmlToList(gamesXml)
+	
+def GamesXmlToList(xml):	
+	list = []
+		 
+	#I should cache this data for the next calls...
+	for game in xml.xpath("//game"): 
+		gameId = GetSingleXmlValue(game, "./@id") 
+		utcStartString = GetSingleXmlValue(game, "./utcStart/text()") #2013-05-18 17:00:00+0000
+		#Log.Debug("utc string: " + utcStartString)
+		#utcStart = datetime.datetime.strptime(utcStartString, "%Y-%m-%d %H:%M:%S%z")
+		utcStart = parser.parse(utcStartString)
+		# set timezone
+		#utcStart = utcStart.replace(tzinfo=UTC)
+		#utcStart.tzinfo = UTC 
+		#Log.Debug("utc date: " + str(utcStart))
+		homeCity = GetSingleXmlValue(game, "./homeTeam/@city")
+		homeStreamName = GetSingleXmlValue(game, "./homeTeam/@streamName")
+		awayCity = GetSingleXmlValue(game, "./awayTeam/@city")
+		awayStreamName = GetSingleXmlValue(game, "./awayTeam/@streamName")
+		homeServer = GetSingleXmlValue(game, "./homeTeam/@server")
+		awayServer = GetSingleXmlValue(game, "./awayTeam/@server")  
+		#Log.Debug("gameID: " + gameId)
+		list.append(Game(gameId, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName))
+	
+	return list
+	
+	
+def GetSingleXmlValue(element, xpath):
+	match = element.xpath(xpath)
+	
+	if len(match) > 0:
+		return match[0]
+	elif len(match) > 1:
+		raise Exception("found " + str(len(match)) + " elements where 1 was expected")
 	else:
-		Log.Debug("No")
-	
-	return (count == 2)
-	
-def CleanGameTitle(title, pubDate, teams):
-	# try and clean up the title so it displays a bit nicer
-	# Most (all?) of the threads contain something like "Team 1 vs Team 2" or "Team 1 at Team 2"
-	# we'll look for instances of 2 teams and use those as the markers in the header
-	
-	foundTeams = []
-	
-	for team in teams:
-		index = string.find(title, team)
-		if index > -1:
-			foundTeams.append(dict(name = team, index = index))
-	
-	# if we didn't find 2 teams, don't mess with the title
-	if len(foundTeams) == 2:
-		#we did find 2 teams, so create a nice title 
-		#first sort by index, so we get them in the order they were in the thread
-		foundTeams.sort(key=lambda t: t["index"])
-		#trim the date a bit
-		date = pubDate[0:16]
-		title = str(L("SmartGameTitleFormat")).format(foundTeams[0]["name"], foundTeams[1]["name"], date) 
-	
-	return title
-	
+		return ""
+		
 
+def GetGameStreams(sport, gameId):
+ 
+	xml = XML.ElementFromString(Data.Load(sport))
+	games = GamesXmlToList(xml)
+	 
+	streams = []
+	UTC = tz.gettz("UTC")
+	
+	for game in filter(lambda g: g.ID == gameId, games):
+		#Python's date handling is horrifically bad.
+		gameStart = game.UtcStart.replace(tzinfo = None) - datetime.datetime.utcnow()
+		# to get a logical representation of how long in the future or past the game was, I have to do all this ridiculous math...
+		minutesToStart = ((gameStart.microseconds + (gameStart.seconds + gameStart.days * 24 * 3600) * 10**6) / 10.0**6) / 60
+		Log.Debug("game starts in: " + str(minutesToStart))
 		
-	
-def IsValidStream(url):
-	# checks for some common errors in the url, like spaces (happens from external blog posts, or if someone
-	# happened to comment "http" and "m3u8" in the same post, but not as a valid url.
-	if string.find(url, " ") > -1: #valid urls do not contain spaces
-		return False
-	
-	if string.find(url, "\r") > -1: # or carriage returns
-		return False
+		available = minutesToStart <= STREAM_AVAILABLE_MINUTES_BEFORE
 		
-	if string.find(url, "\n") > -1: # or line feeds
-		return False
-	
-	#seems legit
-	return True
+		if game.HomeServer != "":
+			title = str(L("HomeStreamLabelFormat")).format(game.HomeCity)
+			url = STREAM_URL_FORMAT.format(game.HomeServer, game.HomeStreamName)
+			streams.append(Stream(title, url, available))
+			
+		if game.AwayServer != "":
+			title = str(L("AwayStreamLabelFormat")).format(game.AwayCity)
+			url = STREAM_URL_FORMAT.format(game.AwayServer, game.AwayStreamName)
+			streams.append(Stream(title, url, available))
+		
+	return streams, available
 	

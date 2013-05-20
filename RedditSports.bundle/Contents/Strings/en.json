@@ -2,6 +2,7 @@
 	"MainMenuTitle": "Reddit Sports",
 	"ErrorNoThreads": "No game threads could be found",
 	"ErrorNoStreams": "No streams could be found for this game",
+	"ErrorStreamsNotReady": "Streams can't be accessed more than {0} minutes before game time.",
 	"SmartGameListTitle": "Smart Game List",
 	"SmartGameListSummary": "Show only search results which appear to be official game threads",
 	"FullGameListTitle": "Full List",
@@ -13,6 +14,9 @@
 	"OfficialTitle": "Official Streams",
 	"UnofficialTitle": "Unofficial Streams",
 	"ExternalTitle": "External Streams",
+	"HomeStreamLabelFormat": "Home Stream ({0})",
+	"AwayStreamLabelFormat": "Away Stream ({0})",
+	"MatchupFormat": "{0} at {1} - {2}",
 	
 	"HockeyTitle": "Hockey",
 	"HockeySummary": "Game Threads from /r/Hockey",
