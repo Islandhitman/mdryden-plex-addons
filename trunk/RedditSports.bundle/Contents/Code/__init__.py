@@ -98,7 +98,8 @@ def StreamMenu(sport, gameId, title):
 	quality = Prefs["videoQuality"]
 	
 	if not available:
-		return ObjectContainer(header=L(sport + "Title"), message=str(L("ErrorStreamsNotReady").replace("{minutes}", core.STREAM_AVAILABLE_MINUTES_BEFORE)))	
+		message = str(L("ErrorStreamsNotReady")).replace("{minutes}", str(core.STREAM_AVAILABLE_MINUTES_BEFORE))
+		return ObjectContainer(header=L(sport + "Title"), message=message)	
 	
 	for stream in streams:
 	

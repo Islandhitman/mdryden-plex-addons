@@ -10,6 +10,7 @@ STREAM_URL_FORMAT = "http://nlds{server}.cdnak.neulion.com/nlds/nhl/{streamName}
 QUALITY_MARKER = "{q}" 
 
 STREAM_AVAILABLE_MINUTES_BEFORE = 20 
+STREAM_HIDDEN_AFTER = 360 # 6 hours oughta be plenty...
 
 ###############################################
 
@@ -53,7 +54,7 @@ def GetGameList(sport):
 	#Log.Debug(url)
 	
 	#try:
-	threadList = XML.ElementFromURL(url)
+	threadList = XML.ElementFromURL(url, cacheTime=None)
 	#except:
 		# reddit down likely
 	#	return itemList
@@ -72,6 +73,7 @@ def GetGameList(sport):
 	
 	thread = XML.ElementFromURL(threadUrl + ".rss")
 	selfPost = thread.xpath("//item")[0]
+	Log.Debug("selfPost: " + selfPost.xpath("./description/text()")[0])
 	description = HTML.ElementFromString(selfPost.xpath("./description/text()")[0])
 	
 	gamesXml = XML.ElementFromString(description.xpath("//p/text()")[0])
@@ -82,7 +84,7 @@ def GetGameList(sport):
 	
 def GamesXmlToList(xml):	
 	list = []
-		 
+		  
 	#I should cache this data for the next calls...
 	for game in xml.xpath("//game"): 
 		gameId = GetSingleXmlValue(game, "./@id") 
@@ -101,7 +103,11 @@ def GamesXmlToList(xml):
 		homeServer = GetSingleXmlValue(game, "./homeTeam/@server")
 		awayServer = GetSingleXmlValue(game, "./awayTeam/@server")  
 		#Log.Debug("gameID: " + gameId)
-		list.append(Game(gameId, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName))
+		
+		# only add if the start time is within a reasonable window
+		minutesToStart = GetMinutesToStart(utcStart)
+		if minutesToStart > STREAM_HIDDEN_AFTER * -1: # -1 in the past			
+			list.append(Game(gameId, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName))
 	
 	return list
 	
@@ -117,6 +123,15 @@ def GetSingleXmlValue(element, xpath):
 		return ""
 		
 
+def GetMinutesToStart(utcStart):
+	#Python's date handling is horrifically bad.
+	gameStart = utcStart.replace(tzinfo = None) - datetime.datetime.utcnow()
+	# to get a logical representation of how long in the future or past the game was, I have to do all this ridiculous math...
+	minutesToStart = ((gameStart.microseconds + (gameStart.seconds + gameStart.days * 24 * 3600) * 10**6) / 10.0**6) / 60
+	
+	return minutesToStart
+	
+		
 def GetGameStreams(sport, gameId):
  
 	xml = XML.ElementFromString(Data.Load(sport))
@@ -126,14 +141,11 @@ def GetGameStreams(sport, gameId):
 	UTC = tz.gettz("UTC")
 	
 	for game in filter(lambda g: g.ID == gameId, games):
-		#Python's date handling is horrifically bad.
-		gameStart = game.UtcStart.replace(tzinfo = None) - datetime.datetime.utcnow()
-		# to get a logical representation of how long in the future or past the game was, I have to do all this ridiculous math...
-		minutesToStart = ((gameStart.microseconds + (gameStart.seconds + gameStart.days * 24 * 3600) * 10**6) / 10.0**6) / 60
+		minutesToStart = GetMinutesToStart(game.UtcStart)
 		Log.Debug("game starts in: " + str(minutesToStart))
 		
 		available = minutesToStart <= STREAM_AVAILABLE_MINUTES_BEFORE
-		 
+				 
 		if game.HomeServer != "":
 			title = str(L("HomeStreamLabelFormat")).replace("{city}", game.HomeCity)
 			url = STREAM_URL_FORMAT.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
