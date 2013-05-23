@@ -5,7 +5,6 @@ from dateutil import tz
 ###############################################
 
 SEARCH_URL = "http://www.reddit.com/r/Sports_Streams/search.rss?q={sport}&sort=new&t=week&restrict_sr=on"
-STREAM_URL_FORMAT = "http://nlds{server}.cdnak.neulion.com/nlds/nhl/{streamName}/as/live/{streamName}_hd_{q}.m3u8"
 
 QUALITY_MARKER = "{q}" 
 
@@ -132,7 +131,7 @@ def GetMinutesToStart(utcStart):
 	return minutesToStart
 	
 		
-def GetGameStreams(sport, gameId):
+def GetGameStreams(sport, gameId, stream_format):
  
 	xml = XML.ElementFromString(Data.Load(sport))
 	games = GamesXmlToList(xml)
@@ -145,15 +144,17 @@ def GetGameStreams(sport, gameId):
 		Log.Debug("game starts in: " + str(minutesToStart))
 		
 		available = minutesToStart <= STREAM_AVAILABLE_MINUTES_BEFORE
-				 
+				  
 		if game.HomeServer != "":
 			title = str(L("HomeStreamLabelFormat")).replace("{city}", game.HomeCity)
-			url = STREAM_URL_FORMAT.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
+			url = stream_format.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
+			Log.Debug("url: " + url)
 			streams.append(Stream(title, url, available))
 			
 		if game.AwayServer != "":
 			title = str(L("AwayStreamLabelFormat")).replace("{city}", game.AwayCity)
-			url = STREAM_URL_FORMAT.replace("{server}", game.AwayServer).replace("{streamName}",game.AwayStreamName)
+			url = stream_format.replace("{server}", game.AwayServer).replace("{streamName}",game.AwayStreamName)
+			Log.Debug("url: " + url)
 			streams.append(Stream(title, url, available))
 		
 	return streams, available

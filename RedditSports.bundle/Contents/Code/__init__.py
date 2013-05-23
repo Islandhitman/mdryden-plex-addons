@@ -17,10 +17,12 @@ SPORTS = {
 	"Hockey": {
 		"sport":"Hockey",
 		#"formatTitleFunction":hockey.FormatTitle
+		"stream_format":"http://nlds{server}.cdnak.neulion.com/nlds/nhl/{streamName}/as/live/{streamName}_hd_{q}.m3u8"
 		},
 	"Basketball": {
-		"sport":"Basketball"
+		"sport":"Basketball",
 		#"formatTitleFunction":basketball.FormatTitle
+		"stream_format":"http://nlds{server}.cdnak.neulion.com/nlds/nba/{streamName}/as/live/{streamName}_hd_{q}.m3u8"
 		}
 	}
 
@@ -93,7 +95,9 @@ def SportMenu(sport):
 def StreamMenu(sport, gameId, title):
 	dir = ObjectContainer(title2 = title)
 	
-	streams, available = core.GetGameStreams(sport, gameId)
+	config = SPORTS[sport]
+	
+	streams, available = core.GetGameStreams(sport, gameId, config["stream_format"])
 	
 	quality = Prefs["videoQuality"]
 	
