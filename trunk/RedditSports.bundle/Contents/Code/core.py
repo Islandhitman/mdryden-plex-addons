@@ -32,9 +32,10 @@ class Game:
 		
 		
 class Stream:
-	def __init__(self, title, url, available):
+	def __init__(self, title, url, team, available):
 		self.Title = title
 		self.Url = url
+		self.Team = team
 		self.Available = available
 	
 ###############################################	
@@ -146,16 +147,16 @@ def GetGameStreams(sport, gameId, stream_format):
 		available = minutesToStart <= STREAM_AVAILABLE_MINUTES_BEFORE
 				  
 		if game.HomeServer != "":
-			title = str(L("HomeStreamLabelFormat")).replace("{city}", game.HomeCity)
+			title = str(L("HomeStreamLabelFormat"))
 			url = stream_format.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
 			Log.Debug("url: " + url)
-			streams.append(Stream(title, url, available))
+			streams.append(Stream(title, url, game.HomeCity, available))
 			
 		if game.AwayServer != "":
-			title = str(L("AwayStreamLabelFormat")).replace("{city}", game.AwayCity)
+			title = str(L("AwayStreamLabelFormat"))
 			url = stream_format.replace("{server}", game.AwayServer).replace("{streamName}",game.AwayStreamName)
 			Log.Debug("url: " + url)
-			streams.append(Stream(title, url, available))
+			streams.append(Stream(title, url, game.AwayCity, available))
 		
 	return streams, available
 	
