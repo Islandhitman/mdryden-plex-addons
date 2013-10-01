@@ -3,44 +3,38 @@ import string, core
 
 ################################################
 
-TEAMS = [
-	#CENTRAL
-	"Chicago Blackhawks",
-	"Columbus Blue Jackets",
-	"Detroit Red Wings",
-	"Nashville Predators",
-	"St. Louis Blues",
-	#ATLANTIC
-	"New Jersey Devils",
-	"New York Islanders",
-	"New York Rangers",
-	"Philadelphia Flyers",
-	"Pittsburgh Penguins",
-	#NORTHWEST
-	"Calgary Flames",
-	"Colorado Avalanche",
-	"Edmonton Oilers",
-	"Minnesota Wild",
-	"Vancouver Canucks",
-	#NORTHEAST
-	"Boston Bruins",
-	"Buffalo Sabres",
-	"Montreal Canadiens",
- 	"Ottawa Senators",
-	"Toronto Maple Leafs",
-	#PACIFIC
-	"Anaheim Ducks",
-	"Dallas Stars",	
-	"Los Angeles Kings",
-	"Phoenix Coyotes",
-	"San Jose Sharks",
-	#SOUTHEAST
-	"Carolina Hurricanes",
-	"Florida Panthers",
-	"Tampa Bay Lightning",
-	"Washington Capitals",
-	"Winnipeg Jets"
-	]
+TEAMS = {
+	'ANA' : ('Anaheim', 'Ducks'),
+	'BOS' : ('Boston', 'Bruins'),
+	'BUF' : ('Buffalo', 'Sabres'),
+	'CAR' : ('Carolina', 'Hurricanes'),
+	'CBS' : ('Columbus', 'Blue Jackets'),
+	'CGY' : ('Calgary', 'Flames'),
+	'CHI' : ('Chicago', 'Blackhawks'),
+	'COL' : ('Colorado', 'Avalanche'),
+	'DAL' : ('Dallas', 'Stars'),
+	'DET' : ('Detroit', 'Red Wings'),
+	'EDM' : ('Edmonton', 'Oilers'),
+	'FLA' : ('Florida', 'Panthers'),
+	'LOS' : ('Los Angeles', 'Kings'),
+	'MIN' : ('Minnesota', 'Wild'),
+	'MON' : ('Montreal', 'Canadiens'),
+	'NJD' : ('New Jersey', 'Devils'),
+	'NSH' : ('Nashville', 'Predators'),
+	'NYI' : ('NY', 'Islanders'),
+	'NYR' : ('NY', 'Rangers'),
+	'OTT' : ('Ottawa', 'Senators'),
+	'PHI' : ('Philadelphia', 'Flyers'),
+	'PHO' : ('Phoenix', 'Coyotes'),
+	'PIT' : ('Pittsburgh', 'Penguins'),
+	'SAN' : ('San Jose', 'Sharks'),
+	'STL' : ('St. Louis', 'Blues'),
+	'TAM' : ('Tampa Bay', 'Lightning'),
+	'TOR' : ('Toronto', 'Maple Leafs'),
+	'VAN' : ('Vancouver', 'Canucks'),
+	'WPG' : ('Winnipeg', 'Jets'),
+	'WSH' : ('Washington', 'Capitals')
+}
 	
 
 def GetOfficialVideosInThread(url):

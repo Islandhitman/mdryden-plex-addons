@@ -1,15 +1,18 @@
 {
 	"MainMenuTitle": "Reddit Sports",
-	"ErrorNoGames": "No games could be found",
-	"ErrorNoStreams": "No streams could be found for this game",
+	"ErrorNoGames": "No games could be found.",
+	"ErrorNoStreams": "No streams could be found for this game.",
 	"ErrorStreamsNotReady": "Streams can't be accessed more than {minutes} minutes before game time.",
 	"HomeStreamLabelFormat": "Home Stream ({city})",
 	"AwayStreamLabelFormat": "Away Stream ({city})",
-	"MatchupFormat": "{away} at {home} - {time}",
+	"MatchupFormat": "{away} at {home}",
+	"MatchupFormatiOS": "{away} at {home} - {time}",
+	"MatchupFormatAndroid": "{away} at {home} - {time}",
+	"SummaryFormat": "Game time: {time}",
 	
 	"HockeyTitle": "Hockey",
-	"HockeySummary": "Game Threads from /r/Hockey",
+	"HockeySummary": "Hockey Streams",
 	
 	"BasketballTitle": "Basketball",
-	"BasketballSummary": "Game Threads from /r/NBA",
+	"BasketballSummary": "Basketball Streams",
 }
