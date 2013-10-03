@@ -10,7 +10,7 @@ from dateutil import tz
 SEARCH_URL = "http://www.reddit.com/r/Sports_Streams/search.rss?q={sport}&sort=new&t=week&restrict_sr=on"
 QUALITY_MARKER = "{q}" 
 
-STREAM_AVAILABLE_MINUTES_BEFORE = 20
+STREAM_AVAILABLE_MINUTES_BEFORE = 2000
 STREAM_HIDDEN_AFTER = 360 # 6 hours oughta be plenty...
 
 CONFIG = None
@@ -124,7 +124,7 @@ def BuildStreamMenu(container, gameId):
 		container.add(VideoClipObject(
 			url = stream.Url,
 			title = str(stream.Title).replace("{city}", team),
-			thumb = CONFIG.Teams[stream.Team]["Logo"]
+			thumb = CONFIG.Teams[stream.Team]["Logo"] 
 		))
 	
 	
