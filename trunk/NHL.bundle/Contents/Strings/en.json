@@ -5,7 +5,7 @@
 	"ErrorStreamsNotReady": "Streams can't be accessed more than {minutes} minutes before game time.",
 	"HomeStreamLabelFormat": "Home Stream ({city})",
 	"AwayStreamLabelFormat": "Away Stream ({city})",
-	"MatchupFormat": "{away} at {home}",
+	"MatchupFormat": "{away} at {home} - {time}",
 	"MatchupFormatiOS": "{away} at {home} - {time}",
 	"MatchupFormatAndroid": "{away} at {home} - {time}",
 	"SummaryFormat": "Game time: {time}",

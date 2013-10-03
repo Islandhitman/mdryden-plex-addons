@@ -1,12 +1,68 @@
 import string
+import urlparse
+#import teams
+
 
 ####################################################################################################
 def MetadataObjectForURL(url):
-    # Construct a generic metadata item
-    return VideoClipObject(
-      title = url,
-      summary = url,
-    )
+
+	# get parts from URL
+	# http://nlds135.cdnak.neulion.com/nlds/nhl/bruins/as/live/bruins_hd_3000.m3u8
+	# find the team name in the url and match it to our constants
+	#slashIndex = url.rfind("/")
+	#usIndex = url.find("_")
+	
+	#urlTeam = url[slashIndex + 1:usIndex]
+	
+	#for team in teams.TEAMS:
+	#	if urlTeam == team["Name"].lower():
+	#		break
+	#I'd put this in the top as a global, but it breaks the service for some unknown reason.
+	LOGOS = {
+		"ANA": R("Team_ANA.jpg"),
+		"BOS": R("Team_BOS.jpg"),
+		"BUF": R("Team_BUF.jpg"),
+		"CAR": R("Team_CAR.jpg"),
+		"CBS": R("Team_CBS.jpg"),
+		"CGY": R("Team_CGY.jpg"),
+		"CHI": R("Team_CHI.jpg"),
+		"COL": R("Team_COL.jpg"),
+		"DAL": R("Team_DAL.jpg"),
+		"DET": R("Team_DET.jpg"),
+		"EDM": R("Team_EDM.jpg"),
+		"FLA": R("Team_FLA.jpg"),
+		"LOS": R("Team_LOS.jpg"),
+		"MIN": R("Team_MIN.jpg"),
+		"MON": R("Team_MON.jpg"),
+		"NJD": R("Team_NJD.jpg"),
+		"NSH": R("Team_NSH.jpg"),
+		"NYI": R("Team_NYI.jpg"),
+		"NYR": R("Team_NYR.jpg"),
+		"OTT": R("Team_OTT.jpg"),
+		"PHI": R("Team_PHI.jpg"),
+		"PHX": R("Team_PHX.jpg"),
+		"PIT": R("Team_PIT.jpg"),
+		"SAN": R("Team_SAN.jpg"),
+		"STL": R("Team_STL.jpg"),
+		"TAM": R("Team_TAM.jpg"),
+		"TOR": R("Team_TOR.jpg"),
+		"VAN": R("Team_VAN.jpg"),
+		"WPG": R("Team_WPG.jpg"),
+		"WSH": R("Team_WSH.jpg")
+	}
+	
+	parts = urlparse.urlparse(url)	
+	query = urlparse.parse_qs(parts.query)
+	
+	team = query["team"][0]
+	title = query["desc"][0]	
+	logo = LOGOS[team]
+
+    # Construct a metadata item
+	return VideoClipObject(
+		title = title,
+		thumb=logo
+	)
 
 ####################################################################################################
 def MediaObjectsForURL(url):

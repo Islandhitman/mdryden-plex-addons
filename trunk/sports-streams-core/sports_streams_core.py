@@ -13,6 +13,9 @@ QUALITY_MARKER = "{q}"
 STREAM_AVAILABLE_MINUTES_BEFORE = 2000
 STREAM_HIDDEN_AFTER = 360 # 6 hours oughta be plenty...
 
+HERE = tz.tzlocal()
+UTC = tz.gettz("UTC")
+
 CONFIG = None
 
 ###############################################
@@ -63,34 +66,20 @@ def BuildMainMenu(container, streamCallBack):
 	
 	items = GetGameList()
 	
-	HERE = tz.tzlocal()
-	UTC = tz.gettz("UTC")
-
-	CLIENT_OS =  Client.Platform
-	matchupFormat = L("MatchupFormat" + CLIENT_OS)
-	if str(matchupFormat) == "MatchupFormat" + CLIENT_OS:
-		# No client specific MatchupFormat, fallback to default
-		matchupFormat = L("MatchupFormat")
-	summaryFormat = L("SummaryFormat" + CLIENT_OS)
-	if str(summaryFormat) == "SummaryFormat" + CLIENT_OS:
-		# No client specific SummaryFormat, fallback to default
-		summaryFormat = L("SummaryFormat")
-	  
+	matchupFormat = GetStreamFormatString("MatchupFormat")
+	summaryFormat = GetStreamFormatString("SummaryFormat")
+	
 	for item in items:
-		#todo: format in module
-		Log.Debug("utcStart: " + str(item.UtcStart))
-		localStart = item.UtcStart.astimezone(HERE).strftime("%H:%M")
-		Log.Debug("localStart: " + str(localStart))
-		
-		# make sure that we are within X minutes of game time so the stream will be active
-		#timeDiff = item.UtcStart - datetime.datetime.utcnow()
-		#Log.Debug("time diff: " + str(timeDiff))
-		
-		away = CONFIG.Teams[item.AwayCity]["City"] + " " + CONFIG.Teams[item.AwayCity]["Name"]
-		home = CONFIG.Teams[item.HomeCity]["City"] + " " + CONFIG.Teams[item.HomeCity]["Name"]
+				
+		#away = CONFIG.Teams[item.AwayCity]["City"] + " " + CONFIG.Teams[item.AwayCity]["Name"]
+		#home = CONFIG.Teams[item.HomeCity]["City"] + " " + CONFIG.Teams[item.HomeCity]["Name"]
 
-		title = str(matchupFormat).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
-		summary = str(summaryFormat).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
+		#title = str(matchupFormat).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
+		#summary = str(summaryFormat).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
+		
+		title = GetStreamFormat(matchupFormat, item.AwayCity, item.HomeCity, item.UtcStart)
+		summary = GetStreamFormat(summaryFormat, item.AwayCity, item.HomeCity, item.UtcStart)
+		
 		container.add(DirectoryObject(
 			key = Callback(streamCallBack, gameId = item.ID, title = title),
 			title = title,
@@ -117,7 +106,7 @@ def BuildStreamMenu(container, gameId):
 	
 	if not available:
 		raise NotAvailableException
-
+	
 	for stream in streams:
 		stream.Url = stream.Url.replace(QUALITY_MARKER, quality)
 		team = CONFIG.Teams[stream.Team]["Name"]
@@ -127,7 +116,26 @@ def BuildStreamMenu(container, gameId):
 			thumb = CONFIG.Teams[stream.Team]["Logo"] 
 		))
 	
+def GetStreamFormatString(key):
+	CLIENT_OS =  Client.Platform
 	
+	format = L(key + CLIENT_OS)
+	if str(format) == key + CLIENT_OS:
+		# No client specific MatchupFormat, fallback to default
+		format = L(key)
+		
+	return format
+	
+
+def GetStreamFormat(format, awayTeam, homeTeam, utcStart):
+	#Log.Debug("utcStart: " + str(utcStart))
+	localStart = utcStart.astimezone(HERE).strftime("%H:%M")
+	#Log.Debug("localStart: " + str(localStart))
+	
+	away = CONFIG.Teams[awayTeam]["City"] + " " + CONFIG.Teams[awayTeam]["Name"]
+	home = CONFIG.Teams[homeTeam]["City"] + " " + CONFIG.Teams[homeTeam]["Name"]
+	
+	return str(format).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
 	
 def NeedsPreferencesItem():
 	# Rather than only show it for some items, we'll show for all and hide for some.
@@ -241,6 +249,8 @@ def GetGameStreams(gameId, stream_format):
 	streams = []
 	UTC = tz.gettz("UTC")
 	
+	matchupFormat = GetStreamFormatString("MatchupFormat")
+	
 	for game in filter(lambda g: g.ID == gameId, games):
 		minutesToStart = GetMinutesToStart(game.UtcStart)
 		Log.Debug("game starts in: " + str(minutesToStart))
@@ -249,15 +259,18 @@ def GetGameStreams(gameId, stream_format):
 				  
 		if game.HomeServer != "":
 			title = str(L("HomeStreamLabelFormat"))
-			url = stream_format.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
+			desc = GetStreamFormat(matchupFormat, game.AwayCity, game.HomeCity, game.UtcStart)
+			#Log.Debug("description: " + desc)
+			url = stream_format.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName).replace("{city}", game.HomeCity).replace("{desc}", desc)
 			Log.Debug("url: " + url)
 			streams.append(Stream(title, url, game.HomeCity, available))
 			
 		if game.AwayServer != "":
 			title = str(L("AwayStreamLabelFormat"))
-			url = stream_format.replace("{server}", game.AwayServer).replace("{streamName}",game.AwayStreamName)
+			desc = GetStreamFormat(matchupFormat, game.AwayCity, game.HomeCity, game.UtcStart)
+			url = stream_format.replace("{server}", game.AwayServer).replace("{streamName}", game.AwayStreamName).replace("{city}", game.AwayCity).replace("{desc}", desc)
 			Log.Debug("url: " + url)
 			streams.append(Stream(title, url, game.AwayCity, available))
 		
 	return streams, available
-	
+
