@@ -1,5 +1,4 @@
 import re, urlparse, string, datetime
-import sports_streams_objects as core
 from dateutil import parser
 from dateutil import tz
 
@@ -22,14 +21,41 @@ CONFIG = None
 def Init(title, sportKeyword, streamFormat, teamNames):
 	Log.Debug("Core.Init()")
 	global CONFIG
-	CONFIG = core.Config(title, sportKeyword, streamFormat, teamNames)
+	CONFIG = Config(title, sportKeyword, streamFormat, teamNames)
 	
 
 class NotAvailableException(Exception):
 	pass
 	
 	Minutes = STREAM_AVAILABLE_MINUTES_BEFORE
+
 	
+class Config:
+	def __init__(self, title, sportKeyword, streamFormat, teams):
+		self.Title = title
+		self.SportKeyword = sportKeyword
+		self.StreamFormat = streamFormat
+		self.Teams = teams
+		
+
+class Game:
+	def __init__(self, id, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName):
+		self.ID = id
+		self.UtcStart = utcStart
+		self.HomeCity = homeCity
+		self.AwayCity = awayCity
+		self.HomeServer = homeServer
+		self.AwayServer = awayServer
+		self.HomeStreamName = homeStreamName
+		self.AwayStreamName = awayStreamName
+				
+		
+class Stream:
+	def __init__(self, title, url, team, available):
+		self.Title = title
+		self.Url = url
+		self.Team = team
+		self.Available = available
 	
 ###############################################	
 
@@ -182,7 +208,7 @@ def GamesXmlToList(xml):
 		# only add if the start time is within a reasonable window
 		minutesToStart = GetMinutesToStart(utcStart)
 		if minutesToStart > STREAM_HIDDEN_AFTER * -1: # -1 in the past			
-			list.append(core.Game(gameId, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName))
+			list.append(Game(gameId, utcStart, homeCity, awayCity, homeServer, awayServer, homeStreamName, awayStreamName))
 	
 	return list
 	
@@ -225,13 +251,13 @@ def GetGameStreams(gameId, stream_format):
 			title = str(L("HomeStreamLabelFormat"))
 			url = stream_format.replace("{server}", game.HomeServer).replace("{streamName}", game.HomeStreamName)
 			Log.Debug("url: " + url)
-			streams.append(core.Stream(title, url, game.HomeCity, available))
+			streams.append(Stream(title, url, game.HomeCity, available))
 			
 		if game.AwayServer != "":
 			title = str(L("AwayStreamLabelFormat"))
 			url = stream_format.replace("{server}", game.AwayServer).replace("{streamName}",game.AwayStreamName)
 			Log.Debug("url: " + url)
-			streams.append(core.Stream(title, url, game.AwayCity, available))
+			streams.append(Stream(title, url, game.AwayCity, available))
 		
 	return streams, available
 	
