@@ -1,30 +1,51 @@
-import core, hockey, basketball, datetime
+import sports_streams_core as core
+import datetime
 from dateutil import tz
 
 ###############################################
 
-VIDEO_PREFIX = "/video/redditsports"
+VIDEO_PREFIX = "/video/nhl"
 
-NAME = "Reddit Sports"
+NAME = "NHL"
 
 ART = 'art-default.png'
 ICON = 'icon-default.png'
 
-# address should not start with a slash
-# keywords should be url encoded
-SPORTS = { 
-	"Hockey": {
-		"sport":"Hockey",
-		#"formatTitleFunction":hockey.FormatTitle
-		"stream_format":"http://nlds{server}.cdnak.neulion.com/nlds/nhl/{streamName}/as/live/{streamName}_hd_{q}.m3u8",
-		"team_names": hockey.TEAMS
-		}#,
-	#"Basketball": {
-	#	"sport":"Basketball",
-	#	#"formatTitleFunction":basketball.FormatTitle
-	#	"stream_format":"http://nlds{server}.cdnak.neulion.com/nlds/nba/{streamName}/as/live/{streamName}_hd_{q}.m3u8"
-	#	}
-	}
+SPORT_KEYWORD = "hockey"
+STREAM_FORMAT = "http://nlds{server}.cdnak.neulion.com/nlds/nhl/{streamName}/as/live/{streamName}_hd_{q}.m3u8"
+
+TEAMS = {
+	"ANA": { "City": "Anaheim", "Name": "Ducks", "Logo": R("Team_ANA.jpg") },
+	"BOS": { "City": "Boston", "Name": " Bruins", "Logo": R("Team_BOS.jpg") },
+	"BUF": { "City": "Buffalo", "Name": " Sabres", "Logo": R("Team_BUF.jpg") },
+	"CAR": { "City": "Carolina", "Name": " Hurricanes", "Logo": R("Team_CAR.jpg") },
+	"CBS": { "City": "Columbus", "Name": " Blue Jackets", "Logo": R("Team_CBS.jpg") },
+	"CGY": { "City": "Calgary", "Name": " Flames", "Logo": R("Team_CGY.jpg") },
+	"CHI": { "City": "Chicago", "Name": " Blackhawks", "Logo": R("Team_CHI.jpg") },
+	"COL": { "City": "Colorado", "Name": " Avalanche", "Logo": R("Team_COL.jpg") },
+	"DAL": { "City": "Dallas", "Name": " Stars", "Logo": R("Team_DAL.jpg") },
+	"DET": { "City": "Detroit", "Name": " Red Wings", "Logo": R("Team_DET.jpg") },
+	"EDM": { "City": "Edmonton", "Name": " Oilers", "Logo": R("Team_EDM.jpg") },
+	"FLA": { "City": "Florida", "Name": " Panthers", "Logo": R("Team_FLA.jpg") },
+	"LOS": { "City": "Los Angeles", "Name": " Kings", "Logo": R("Team_LOS.jpg") },
+	"MIN": { "City": "Minnesota", "Name": " Wild", "Logo": R("Team_MIN.jpg") },
+	"MON": { "City": "Montreal", "Name": " Canadiens", "Logo": R("Team_MON.jpg") },
+	"NJD": { "City": "New Jersey", "Name": " Devils", "Logo": R("Team_NJD.jpg") },
+	"NSH": { "City": "Nashville", "Name": " Predators", "Logo": R("Team_NSH.jpg") },
+	"NYI": { "City": "NY", "Name": " Islanders", "Logo": R("Team_NYI.jpg") },
+	"NYR": { "City": "NY", "Name": " Rangers", "Logo": R("Team_NYR.jpg") },
+	"OTT": { "City": "Ottawa", "Name": " Senators", "Logo": R("Team_OTT.jpg") },
+	"PHI": { "City": "Philadelphia", "Name": " Flyers", "Logo": R("Team_PHI.jpg") },
+	"PHX": { "City": "Phoenix", "Name": " Coyotes", "Logo": R("Team_PHX.jpg") },
+	"PIT": { "City": "Pittsburgh", "Name": " Penguins", "Logo": R("Team_PIT.jpg") },
+	"SAN": { "City": "San Jose", "Name": " Sharks", "Logo": R("Team_SAN.jpg") },
+	"STL": { "City": "St. Louis", "Name": " Blues", "Logo": R("Team_STL.jpg") },
+	"TAM": { "City": "Tampa Bay", "Name": " Lightning", "Logo": R("Team_TAM.jpg") },
+	"TOR": { "City": "Toronto", "Name": " Maple Leafs", "Logo": R("Team_TOR.jpg") },
+	"VAN": { "City": "Vancouver", "Name": " Canucks", "Logo": R("Team_VAN.jpg") },
+	"WPG": { "City": "Winnipeg", "Name": " Jets", "Logo": R("Team_WPG.jpg") },
+	"WSH": { "City": "Washington", "Name": " Capitals", "Logo": R("Team_WSH.jpg") }
+}
 
 ###############################################
 
@@ -38,103 +59,27 @@ def Start():
 	
 	ObjectContainer.title1 = NAME
 	
+	core.Init(NAME, SPORT_KEYWORD, STREAM_FORMAT, TEAMS)
+	
 	Log.Debug("Plugin Start")
 
 def MainMenu():
 	dir = ObjectContainer(title2 = Locale.LocalString("MainMenuTitle"), art=R("art-default.png"))
 	
-	for item in SPORTS:
-		Log.Debug(item)
-		sport = SPORTS[item]["sport"]
-		dir.add(DirectoryObject(
-				key = Callback(SportMenu, sport = sport),
-				title = Locale.LocalString(sport + "Title"),
-				summary = Locale.LocalString(sport + "Summary"),
-				thumb = R(sport+".jpg")
-			))
-
-	Log.Debug("Request from platform: " + Client.Platform)
-	if Client.Platform in [ClientPlatform.MacOSX, ClientPlatform.Linux, ClientPlatform.Windows]:
-		dir.add(PrefsObject(title="Preferences", summary="Change the stream bitrate.", thumb=R("icon-prefs.png")))
+	core.BuildMainMenu(dir, StreamMenu)
 	
 	return dir
-	 
-	
-def SportMenu(sport):
-	
-	dir = ObjectContainer(title2 = Locale.LocalString(sport + "Title"), art=R(sport+".jpg")) 
-	
-	items = core.GetGameList(sport)
-	
-	HERE = tz.tzlocal()
-	UTC = tz.gettz("UTC")
-
-	CLIENT_OS =  Client.Platform
-	matchupFormat = L("MatchupFormat" + CLIENT_OS)
-	if str(matchupFormat) == "MatchupFormat" + CLIENT_OS:
-		# No client specific MatchupFormat, fallback to default
-		matchupFormat = L("MatchupFormat")
-	summaryFormat = L("SummaryFormat" + CLIENT_OS)
-	if str(summaryFormat) == "SummaryFormat" + CLIENT_OS:
-		# No client specific SummaryFormat, fallback to default
-		summaryFormat = L("SummaryFormat")
-	  
-	for item in items:
-		#todo: format in module
-		Log.Debug("utcStart: " + str(item.UtcStart))
-		localStart = item.UtcStart.astimezone(HERE).strftime("%H:%M")
-		Log.Debug("localStart: " + str(localStart))
-		
-		# make sure that we are within X minutes of game time so the stream will be active
-		#timeDiff = item.UtcStart - datetime.datetime.utcnow()
-		#Log.Debug("time diff: " + str(timeDiff))
-
-		away = item.AwayCity
-		home = item.HomeCity
-		if "team_names" in SPORTS[sport]:
-			away = SPORTS[sport]["team_names"][away][0] + " " + SPORTS[sport]["team_names"][away][1]
-			home = SPORTS[sport]["team_names"][home][0] + " " + SPORTS[sport]["team_names"][home][1]
-
-		title = str(matchupFormat).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
-		summary = str(summaryFormat).replace("{away}", away).replace("{home}", home).replace("{time}", localStart)
-		dir.add(DirectoryObject(
-			key = Callback(StreamMenu, sport = sport, gameId = item.ID, title = title),
-			title = title,
-			summary = summary
-		))
-		
+	 	
 		 
-	# display empty message
-	if len(dir) == 0: 
-		Log.Debug("no games")
-		return ObjectContainer(header=L(sport + "Title"), message=L("ErrorNoGames")) 
-		
-	return dir
+def StreamMenu(gameId, title):
+	dir = ObjectContainer(title2 = title, art=R(ICON))
 	
-		 
-def StreamMenu(sport, gameId, title):
-	dir = ObjectContainer(title2 = title, art=R(sport+".jpg"))
-	
-	config = SPORTS[sport]
-	
-	streams, available = core.GetGameStreams(sport, gameId, config["stream_format"])
-	
-	quality = Prefs["videoQuality"]
-	
-	if not available:
-		message = str(L("ErrorStreamsNotReady")).replace("{minutes}", str(core.STREAM_AVAILABLE_MINUTES_BEFORE))
-		return ObjectContainer(header=L(sport + "Title"), message=message)	
-
-	for stream in streams:
-		stream.Url = stream.Url.replace(core.QUALITY_MARKER, quality)
-		team = stream.Team
-		if "team_names" in SPORTS[sport]:
-			team = SPORTS[sport]["team_names"][team][1]
-		dir.add(VideoClipObject(
-			url = stream.Url,
-			title = str(stream.Title).replace("{city}", team),
-			thumb = R(sport+"_"+stream.Team+".jpg"),
-		))
+	try:
+		core.BuildStreamMenu(dir, gameId)	
+	except core.NotAvailableException as ex:
+		message = str(L("ErrorStreamsNotReady")).replace("{minutes}", str(ex.Minutes))
+		return ObjectContainer(header=L("MainMenuTitle"), message=message)	
 	
 	return dir
+	
 	
